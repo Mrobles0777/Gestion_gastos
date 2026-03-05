@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "gestion-gastos-app",
-    "slug": "gestion-gastos-app",
+    "name": "Gestión de Gastos",
+    "slug": "gestion-de-gastos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,22 +9,29 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f8fafc"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gestiongastos.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#f8fafc",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.gestiongastos.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "scheme": "gestion-de-gastos",
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }
