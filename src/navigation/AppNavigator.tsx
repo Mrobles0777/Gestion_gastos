@@ -12,6 +12,7 @@ import {
     LayoutDashboard,
     Landmark,
     ShoppingBag,
+    User,
 } from 'lucide-react-native';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,7 @@ import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { FixedExpensesScreen } from '../screens/FixedExpensesScreen';
 import { DailyExpensesScreen } from '../screens/DailyExpensesScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 import { Colors, Typography } from '../theme/tokens';
 
 const Stack = createNativeStackNavigator();
@@ -73,6 +75,16 @@ function MainTabs() {
                     tabBarLabel: 'Diarios',
                     tabBarIcon: ({ color, size }) => (
                         <ShoppingBag color={color} size={size} />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{
+                    tabBarLabel: 'Perfil',
+                    tabBarIcon: ({ color, size }) => (
+                        <User color={color} size={size} />
                     ),
                 }}
             />

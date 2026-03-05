@@ -6,9 +6,11 @@
 export interface Profile {
     id: string;
     email: string;
-    full_name: string | null;
+    full_name: string;
     monthly_salary: number;
     currency: string;
+    alert_threshold: number;
+    alert_email: string | null;
     alert_sent_month: string | null; // 'YYYY-MM' format
     created_at: string;
 }

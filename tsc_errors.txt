@@ -1,0 +1,2 @@
+src/screens/ProfileScreen.tsx(147,17): error TS2322: Type '{ title: string; onPress: () => Promise<void>; isLoading: boolean; icon: Element; containerStyle: { marginTop: 16; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'containerStyle' does not exist on type 'IntrinsicAttributes & ButtonProps'.

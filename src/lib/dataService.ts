@@ -30,7 +30,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function upsertProfile(
     userId: string,
-    updates: Partial<Pick<Profile, 'full_name' | 'monthly_salary' | 'currency'>>,
+    updates: Partial<Pick<Profile, 'full_name' | 'monthly_salary' | 'currency' | 'alert_threshold' | 'alert_email'>>,
 ): Promise<Profile> {
     const { data, error } = await supabase
         .from('profiles')
@@ -177,17 +177,20 @@ export async function checkAndTriggerBudgetAlert(
     const dashboard = await getDashboardData(userId);
 
     if (dashboard.salary === 0) return false;
-    if (dashboard.percentConsumed < 75) return false;
+
+    const profile = await getProfile(userId);
+    const threshold = profile?.alert_threshold ?? 75;
+    if (dashboard.percentConsumed < threshold) return false;
 
     // Check if alert was already sent this month
-    const profile = await getProfile(userId);
     if (profile?.alert_sent_month === month.key) return false;
 
     // Invoke Edge Function
+    const targetEmail = profile?.alert_email || email;
     const { error } = await supabase.functions.invoke('budget-alert', {
         body: {
             user_id: userId,
-            email,
+            email: targetEmail,
             salary: dashboard.salary,
             totalSpent: dashboard.totalSpent,
             pct: Math.round(dashboard.percentConsumed),

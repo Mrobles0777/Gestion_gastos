@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   full_name   TEXT,
   monthly_salary NUMERIC DEFAULT 0,
   currency    TEXT DEFAULT 'CLP',
+  alert_threshold NUMERIC DEFAULT 75,
+  alert_email TEXT,
   alert_sent_month TEXT, -- 'YYYY-MM' for anti-repeat logic
   created_at  TIMESTAMPTZ DEFAULT now()
 );
