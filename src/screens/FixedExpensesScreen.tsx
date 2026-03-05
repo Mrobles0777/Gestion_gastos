@@ -80,6 +80,7 @@ export function FixedExpensesScreen() {
                 text: 'Eliminar',
                 style: 'destructive',
                 onPress: async () => {
+                    console.log('Deleting fixed expense:', id);
                     try {
                         await deleteFixedExpense(id);
                         setExpenses((prev) => prev.filter((e) => e.id !== id));

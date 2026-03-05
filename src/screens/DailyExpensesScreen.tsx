@@ -67,6 +67,7 @@ export function DailyExpensesScreen() {
                 text: 'Eliminar',
                 style: 'destructive',
                 onPress: async () => {
+                    console.log('Deleting daily expense:', id);
                     try {
                         await deleteDailyExpense(id);
                         setExpenses((prev) => prev.filter((e) => e.id !== id));
