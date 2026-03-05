@@ -127,11 +127,14 @@ export function DashboardScreen() {
 
                 {/* Progress */}
                 <Card style={styles.progressCard}>
-                    <ProgressBar percent={data.percentConsumed} />
-                    {data.percentConsumed >= 75 && (
+                    <ProgressBar
+                        percent={data.percentConsumed}
+                        threshold={data.alertThreshold}
+                    />
+                    {data.percentConsumed >= data.alertThreshold && (
                         <View style={styles.alertBadge}>
                             <Text style={styles.alertText}>
-                                ⚠️ Has superado el 75% de tu presupuesto
+                                ⚠️ Has superado el {Math.round(data.alertThreshold)}% de tu presupuesto
                             </Text>
                         </View>
                     )}

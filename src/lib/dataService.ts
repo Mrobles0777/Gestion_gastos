@@ -158,13 +158,14 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     ]);
 
     const salary = profile?.monthly_salary ?? 0;
+    const alertThreshold = profile?.alert_threshold ?? 75;
     const totalFixed = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
     const totalDaily = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
     const totalSpent = totalFixed + totalDaily;
     const available = salary - totalSpent;
     const percentConsumed = salary > 0 ? (totalSpent / salary) * 100 : 0;
 
-    return { salary, totalFixed, totalDaily, totalSpent, available, percentConsumed };
+    return { salary, totalFixed, totalDaily, totalSpent, available, percentConsumed, alertThreshold };
 }
 
 // ────────────────────── Budget Alert ─────────────────────────

@@ -10,12 +10,13 @@ import { Colors, Spacing, Radius, Typography } from '../../theme/tokens';
 
 interface ProgressBarProps {
     percent: number; // 0–100+
+    threshold?: number;
     showLabel?: boolean;
 }
 
-export function ProgressBar({ percent, showLabel = true }: ProgressBarProps) {
+export function ProgressBar({ percent, threshold = 75, showLabel = true }: ProgressBarProps) {
     const clampedPercent = Math.min(Math.max(percent, 0), 100);
-    const gradientColors = getGradientForPercent(clampedPercent);
+    const gradientColors = getGradientForPercent(clampedPercent, threshold);
 
     return (
         <View style={styles.container}>
@@ -34,8 +35,8 @@ export function ProgressBar({ percent, showLabel = true }: ProgressBarProps) {
                     end={{ x: 1, y: 0 }}
                     style={[styles.fill, { width: `${clampedPercent}%` }]}
                 />
-                {/* 75% threshold marker */}
-                <View style={[styles.threshold, { left: '75%' }]} />
+                {/* Dynamic threshold marker */}
+                <View style={[styles.threshold, { left: `${threshold}%` }]} />
             </View>
         </View>
     );
@@ -43,9 +44,11 @@ export function ProgressBar({ percent, showLabel = true }: ProgressBarProps) {
 
 function getGradientForPercent(
     pct: number,
+    threshold: number,
 ): readonly [string, string] {
-    if (pct >= 75) return Colors.gradient.danger;
-    if (pct >= 50) return [Colors.status.warning, '#ea580c'] as const;
+    if (pct >= threshold) return Colors.gradient.danger;
+    const warningPoint = threshold * 0.66; // Sub-threshold warning
+    if (pct >= warningPoint) return [Colors.status.warning, '#ea580c'] as const;
     return Colors.gradient.success;
 }
 

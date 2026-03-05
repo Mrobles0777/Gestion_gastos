@@ -61,20 +61,29 @@ export function DailyExpensesScreen() {
     );
 
     async function handleDelete(id: string) {
+        const performDelete = async () => {
+            console.log('Deleting daily expense:', id);
+            try {
+                await deleteDailyExpense(id);
+                setExpenses((prev) => prev.filter((e) => e.id !== id));
+            } catch (error: any) {
+                Alert.alert('Error', error.message);
+            }
+        };
+
+        if (require('react-native').Platform.OS === 'web') {
+            if (window.confirm('¿Eliminar este gasto?')) {
+                performDelete();
+            }
+            return;
+        }
+
         Alert.alert('Eliminar', '¿Eliminar este gasto?', [
             { text: 'Cancelar', style: 'cancel' },
             {
                 text: 'Eliminar',
                 style: 'destructive',
-                onPress: async () => {
-                    console.log('Deleting daily expense:', id);
-                    try {
-                        await deleteDailyExpense(id);
-                        setExpenses((prev) => prev.filter((e) => e.id !== id));
-                    } catch (error: any) {
-                        Alert.alert('Error', error.message);
-                    }
-                },
+                onPress: performDelete,
             },
         ]);
     }
@@ -169,7 +178,10 @@ export function DailyExpensesScreen() {
                                 <Text style={styles.expenseAmount}>
                                     {formatCurrency(item.amount)}
                                 </Text>
-                                <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                                <TouchableOpacity
+                                    onPress={() => handleDelete(item.id)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
                                     <Trash2 color={Colors.status.danger} size={18} />
                                 </TouchableOpacity>
                             </View>

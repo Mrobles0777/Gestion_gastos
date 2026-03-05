@@ -61,6 +61,7 @@ export interface DashboardData {
     totalSpent: number;
     available: number;
     percentConsumed: number;
+    alertThreshold: number;
 }
 
 export interface MonthKey {
