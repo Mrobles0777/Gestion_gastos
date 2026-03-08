@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         fontSize: Typography.size.body,
     },
     track: {
-        height: 12,
+        height: 16,
         backgroundColor: Colors.neutral[700],
         borderRadius: Radius.full,
         overflow: 'hidden',
@@ -84,9 +84,10 @@ const styles = StyleSheet.create({
     threshold: {
         position: 'absolute',
         top: 0,
-        width: 2,
+        width: 3,
         height: '100%',
-        backgroundColor: Colors.neutral[300],
-        opacity: 0.6,
+        backgroundColor: Colors.neutral[100],
+        opacity: 0.4,
+        zIndex: 10,
     },
 });

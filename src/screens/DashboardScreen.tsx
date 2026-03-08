@@ -25,6 +25,7 @@ import {
     Settings,
 } from 'lucide-react-native';
 import { Card, ProgressBar, Button } from '../components/common';
+import { BudgetImpactCard } from '../components/dashboard/BudgetImpactCard';
 import { useAuth } from '../contexts/AuthContext';
 import { getDashboardData, getProfile } from '../lib/dataService';
 import { formatCurrency, getCurrentMonthKey } from '../lib/dateHelpers';
@@ -125,20 +126,14 @@ export function DashboardScreen() {
                     <Text style={styles.salaryAmount}>{formatCurrency(data.salary)}</Text>
                 </LinearGradient>
 
-                {/* Progress */}
-                <Card style={styles.progressCard}>
-                    <ProgressBar
-                        percent={data.percentConsumed}
-                        threshold={data.alertThreshold}
-                    />
-                    {data.percentConsumed >= data.alertThreshold && (
-                        <View style={styles.alertBadge}>
-                            <Text style={styles.alertText}>
-                                ⚠️ Has superado el {Math.round(data.alertThreshold)}% de tu presupuesto
-                            </Text>
-                        </View>
-                    )}
-                </Card>
+                {/* Budget Impact Visualization */}
+                <BudgetImpactCard
+                    consumed={data.totalSpent}
+                    available={data.available}
+                    total={data.salary}
+                    percent={data.percentConsumed}
+                    threshold={data.alertThreshold}
+                />
 
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
@@ -159,12 +154,6 @@ export function DashboardScreen() {
                         label="Total gastado"
                         value={formatCurrency(data.totalSpent)}
                         color={Colors.status.info}
-                    />
-                    <StatCard
-                        icon={<PiggyBank color={Colors.status.success} size={22} />}
-                        label="Disponible"
-                        value={formatCurrency(data.available)}
-                        color={data.available >= 0 ? Colors.status.success : Colors.status.danger}
                     />
                 </View>
             </ScrollView>
