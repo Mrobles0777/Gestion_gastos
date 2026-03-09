@@ -2,6 +2,7 @@
  * Data Services – API layer for Supabase queries.
  * Rule I: Logic layer is "blind" – doesn't know about UI.
  * Rule I: Agnosticismo de Dependencias – wraps all Supabase calls.
+ * Last update: 2026-03-08
  */
 
 import { supabase } from './supabase';
