@@ -14,6 +14,11 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL = 'Gestión de Gastos <onboarding@resend.dev>';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 interface AlertPayload {
   user_id: string;
   email: string;
@@ -26,6 +31,11 @@ interface AlertPayload {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const payload: AlertPayload = await req.json();
     const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
@@ -39,7 +49,7 @@ serve(async (req) => {
       console.error('Error: Missing required fields (email or salary)');
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400 },
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -47,7 +57,7 @@ serve(async (req) => {
       console.error('Error: RESEND_API_KEY is not set in Supabase Secrets');
       return new Response(
         JSON.stringify({ error: 'Mail service not configured (API Key missing)' }),
-        { status: 500 },
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -108,18 +118,18 @@ serve(async (req) => {
       const errorBody = await emailResponse.text();
       return new Response(
         JSON.stringify({ error: `Email send failed: ${errorBody}` }),
-        { status: 500 },
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Alert email sent' }),
-      { status: 200 },
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {
     return new Response(
       JSON.stringify({ error: (error as Error).message }),
-      { status: 500 },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
