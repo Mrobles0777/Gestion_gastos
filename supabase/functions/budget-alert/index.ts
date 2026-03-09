@@ -19,6 +19,8 @@ interface AlertPayload {
   email: string;
   salary: number;
   totalSpent: number;
+  totalFixed: number;
+  totalDaily: number;
   pct: number;
   monthKey: string;
 }
@@ -26,7 +28,7 @@ interface AlertPayload {
 serve(async (req) => {
   try {
     const payload: AlertPayload = await req.json();
-    const { email, salary, totalSpent, pct, monthKey } = payload;
+    const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
 
     if (!email || !salary) {
       return new Response(
@@ -34,6 +36,8 @@ serve(async (req) => {
         { status: 400 },
       );
     }
+
+    const now = new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' });
 
     // Send email via Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -45,27 +49,40 @@ serve(async (req) => {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: `⚠️ Alerta: superaste el ${pct}% de tu sueldo`,
+        subject: `⚠️ Alerta: El umbral de gastos ha sido superado`,
         html: `
-          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-            <h2 style="color: #ef4444;">⚠️ Alerta de Presupuesto</h2>
-            <p>Has consumido el <strong>${pct}%</strong> de tu sueldo este mes (${monthKey}).</p>
-            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-              <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">Sueldo mensual</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;">
-                  $${salary.toLocaleString('es-CL')}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">Total gastado</td>
-                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold; color: #ef4444;">
-                  $${totalSpent.toLocaleString('es-CL')}
-                </td>
-              </tr>
-            </table>
-            <p style="color: #6b7280; font-size: 14px;">
-              Este correo se envía una sola vez por mes al superar el ${pct}% del presupuesto.
+          <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <h2 style="color: #ef4444; margin-top: 0;">⚠️ Alerta de Presupuesto</h2>
+            <p>Hola,</p>
+            <p>Se ha superado el umbral de gastos configurado. Has consumido el <strong>${pct}%</strong> de tu sueldo este mes (${monthKey}).</p>
+            
+            <div style="background-color: #f9fafb; padding: 16px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="margin-top: 0; font-size: 16px; color: #374151;">Resumen de Gastos</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280;">Sueldo Mensual</td>
+                  <td style="padding: 6px 0; text-align: right; font-weight: bold;">$${salary.toLocaleString('es-CL')}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280;">Gastos Fijos</td>
+                  <td style="padding: 6px 0; text-align: right; font-weight: bold;">$${totalFixed.toLocaleString('es-CL')}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280;">Gastos Diarios</td>
+                  <td style="padding: 6px 0; text-align: right; font-weight: bold;">$${totalDaily.toLocaleString('es-CL')}</td>
+                </tr>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                  <td style="padding: 10px 0 0 0; font-weight: bold; color: #111827;">Total Gastado</td>
+                  <td style="padding: 10px 0 0 0; text-align: right; font-weight: bold; color: #ef4444; font-size: 18px;">
+                    $${totalSpent.toLocaleString('es-CL')}
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="color: #6b7280; font-size: 12px; margin-top: 24px;">
+              <strong>Fecha y hora del reporte:</strong> ${now}<br>
+              Este correo es generado automáticamente al registrar un gasto que supera el límite establecido.
             </p>
           </div>
         `,

@@ -183,9 +183,6 @@ export async function checkAndTriggerBudgetAlert(
     const threshold = profile?.alert_threshold ?? 75;
     if (dashboard.percentConsumed < threshold) return false;
 
-    // Check if alert was already sent this month
-    if (profile?.alert_sent_month === month.key) return false;
-
     // Invoke Edge Function
     const targetEmail = profile?.alert_email || email;
     const { error } = await supabase.functions.invoke('budget-alert', {
@@ -194,6 +191,8 @@ export async function checkAndTriggerBudgetAlert(
             email: targetEmail,
             salary: dashboard.salary,
             totalSpent: dashboard.totalSpent,
+            totalFixed: dashboard.totalFixed,
+            totalDaily: dashboard.totalDaily,
             pct: Math.round(dashboard.percentConsumed),
             monthKey: month.key,
         },
@@ -203,12 +202,6 @@ export async function checkAndTriggerBudgetAlert(
         console.error('Budget alert edge function error:', error);
         return false;
     }
-
-    // Mark alert as sent
-    await supabase
-        .from('profiles')
-        .update({ alert_sent_month: month.key })
-        .eq('id', userId);
 
     return true;
 }
