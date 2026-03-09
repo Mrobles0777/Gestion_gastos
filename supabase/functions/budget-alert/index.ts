@@ -3,7 +3,7 @@
  *
  * Invoked from the client when a user exceeds their custom salary threshold.
  * Sends an email via Resend and marks the alert as sent.
- * Version: 1.0.1 (Triggered via GitHub Actions)
+ * Version: 1.0.2 (Triggered via GitHub Actions)
  *
  * Deploy: supabase functions deploy budget-alert
  * Set secret: supabase secrets set RESEND_API_KEY=re_xxxx
