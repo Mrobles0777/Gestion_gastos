@@ -30,14 +30,29 @@ serve(async (req) => {
     const payload: AlertPayload = await req.json();
     const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
 
+    console.log('--- Budget Alert Debug ---');
+    console.log('Target Email:', email);
+    console.log('Spending Data:', { salary, totalSpent, pct, monthKey });
+    console.log('API Key Present:', !!RESEND_API_KEY);
+
     if (!email || !salary) {
+      console.error('Error: Missing required fields (email or salary)');
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400 },
       );
     }
 
+    if (!RESEND_API_KEY) {
+      console.error('Error: RESEND_API_KEY is not set in Supabase Secrets');
+      return new Response(
+        JSON.stringify({ error: 'Mail service not configured (API Key missing)' }),
+        { status: 500 },
+      );
+    }
+
     const now = new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' });
+    console.log('Current Timestamp:', now);
 
     // Send email via Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {

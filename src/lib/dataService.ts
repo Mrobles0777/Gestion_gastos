@@ -186,17 +186,22 @@ export async function checkAndTriggerBudgetAlert(
 
     // Invoke Edge Function
     const targetEmail = profile?.alert_email || email;
-    const { error } = await supabase.functions.invoke('budget-alert', {
-        body: {
-            user_id: userId,
-            email: targetEmail,
-            salary: dashboard.salary,
-            totalSpent: dashboard.totalSpent,
-            totalFixed: dashboard.totalFixed,
-            totalDaily: dashboard.totalDaily,
-            pct: Math.round(dashboard.percentConsumed),
-            monthKey: month.key,
-        },
+    const payload = {
+        user_id: userId,
+        email: targetEmail,
+        salary: dashboard.salary,
+        totalSpent: dashboard.totalSpent,
+        totalFixed: dashboard.totalFixed,
+        totalDaily: dashboard.totalDaily,
+        pct: Math.round(dashboard.percentConsumed),
+        monthKey: month.key,
+    };
+
+    console.log('--- Triggering Budget Alert ---');
+    console.log('Payload:', payload);
+
+    const { data, error } = await supabase.functions.invoke('budget-alert', {
+        body: payload,
     });
 
     if (error) {
@@ -204,5 +209,6 @@ export async function checkAndTriggerBudgetAlert(
         return false;
     }
 
+    console.log('Budget alert function response:', data);
     return true;
 }
