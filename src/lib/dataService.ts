@@ -347,3 +347,21 @@ export async function checkAndTriggerBudgetAlert(
     console.log('Budget alert function response:', data);
     return true;
 }
+
+export async function clearUserCache(userId: string): Promise<void> {
+    const month = getCurrentMonthKey();
+    const keys = [
+        CACHE_KEYS.PROFILE(userId),
+        CACHE_KEYS.DASHBOARD(userId),
+        CACHE_KEYS.FIXED_EXPENSES(userId, month.firstDay),
+        CACHE_KEYS.DAILY_EXPENSES(userId, month.firstDay, month.lastDay),
+    ];
+
+    for (const key of keys) {
+        try {
+            await SecureStore.deleteItemAsync(key);
+        } catch (e) {
+            console.warn(`Failed to delete cache key: ${key}`, e);
+        }
+    }
+}

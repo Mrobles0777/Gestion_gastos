@@ -12,9 +12,9 @@ import {
     Alert,
     TouchableOpacity,
 } from 'react-native';
-import { User, Bell, Calendar, LogOut, Save } from 'lucide-react-native';
+import { User, Bell, Calendar, LogOut, Save, Trash2, RefreshCcw } from 'lucide-react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { getProfile, upsertProfile } from '../lib/dataService';
+import { getProfile, upsertProfile, clearUserCache } from '../lib/dataService';
 import { Colors, Spacing, Radius, Typography, Shadows } from '../theme/tokens';
 import { Button, Input, Card } from '../components/common';
 import { Profile } from '../types';
@@ -30,6 +30,7 @@ export function ProfileScreen() {
     const [salary, setSalary] = useState('');
     const [threshold, setThreshold] = useState('75');
     const [alertEmail, setAlertEmail] = useState('');
+    const [isClearingCache, setIsClearingCache] = useState(false);
 
     useEffect(() => {
         loadProfile();
@@ -68,6 +69,20 @@ export function ProfileScreen() {
             Alert.alert('Error', error.message);
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleClearCache() {
+        if (!user) return;
+        setIsClearingCache(true);
+        try {
+            await clearUserCache(user.id);
+            Alert.alert('Caché Limpia', 'Se han borrado los datos locales. La app cargará datos frescos en la próxima visita.');
+            loadProfile();
+        } catch (error: any) {
+            Alert.alert('Error', 'No se pudo limpiar la caché');
+        } finally {
+            setIsClearingCache(false);
         }
     }
 
@@ -147,6 +162,15 @@ export function ProfileScreen() {
                 style={styles.saveButton}
             />
 
+            <Button
+                title="Limpiar Datos Locales (Caché)"
+                onPress={handleClearCache}
+                isLoading={isClearingCache}
+                variant="ghost"
+                icon={<RefreshCcw color={Colors.brand.primary} size={20} />}
+                style={styles.cacheButton}
+            />
+
             <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
                 <LogOut color={Colors.status.danger} size={20} />
                 <Text style={styles.logoutText}>Cerrar Sesión</Text>
@@ -217,6 +241,11 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         marginTop: Spacing.md,
+    },
+    cacheButton: {
+        marginTop: Spacing.md,
+        borderColor: Colors.brand.primary,
+        borderWidth: 1,
     },
     logoutButton: {
         flexDirection: 'row',
