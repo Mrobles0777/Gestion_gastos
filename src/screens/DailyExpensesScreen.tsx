@@ -45,10 +45,10 @@ export function DailyExpensesScreen() {
         if (!user) return;
         try {
             const data = await getDailyExpenses(user.id, month.firstDay, month.lastDay, useCache);
-            setExpenses(data);
+            setExpenses(data as DailyExpense[]);
 
             if (useCache) {
-                getDailyExpenses(user.id, month.firstDay, month.lastDay).then(setExpenses).catch(() => {});
+                getDailyExpenses(user.id, month.firstDay, month.lastDay).then((data: DailyExpense[]) => setExpenses(data)).catch(() => {});
             }
         } catch (error: any) {
             if (error.message !== 'TIMEOUT') {
@@ -70,7 +70,7 @@ export function DailyExpensesScreen() {
             console.log('Deleting daily expense:', id);
             try {
                 await deleteDailyExpense(id);
-                setExpenses((prev) => prev.filter((e) => e.id !== id));
+                setExpenses((prev: DailyExpense[]) => prev.filter((e: DailyExpense) => e.id !== id));
             } catch (error: any) {
                 Alert.alert('Error', error.message);
             }
@@ -103,7 +103,7 @@ export function DailyExpensesScreen() {
                 category: category || null,
                 date: todayString(),
             });
-            setExpenses((prev) => [newExpense, ...prev]);
+            setExpenses((prev: DailyExpense[]) => [newExpense, ...prev]);
             setShowModal(false);
 
             // Check budget alert
@@ -163,12 +163,12 @@ export function DailyExpensesScreen() {
             ) : (
                 <SectionList
                     sections={sections}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item: DailyExpense) => item.id}
                     contentContainerStyle={styles.listContent}
-                    renderSectionHeader={({ section: { title } }) => (
+                    renderSectionHeader={({ section: { title } }: { section: { title: string } }) => (
                         <Text style={styles.sectionHeader}>{title}</Text>
                     )}
-                    renderItem={({ item }) => (
+                    renderItem={({ item }: { item: DailyExpense }) => (
                         <Card style={styles.expenseCard}>
                             <View style={styles.expenseRow}>
                                 <View style={styles.iconContainer}>

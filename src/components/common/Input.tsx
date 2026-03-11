@@ -20,12 +20,14 @@ interface InputProps extends TextInputProps {
     containerStyle?: ViewStyle;
 }
 
-export function Input({
-    label,
-    error,
-    containerStyle,
-    ...textInputProps
-}: InputProps) {
+export function Input(props: any) {
+    const {
+        label,
+        error,
+        containerStyle,
+        ...textInputProps
+    } = props;
+    
     return (
         <View style={[styles.container, containerStyle]}>
             {label && <Text style={styles.label}>{label}</Text>}

@@ -86,7 +86,7 @@ export function FixedExpensesScreen() {
             console.log('Deleting fixed expense:', id);
             try {
                 await deleteFixedExpense(id);
-                setExpenses((prev) => prev.filter((e) => e.id !== id));
+                setExpenses((prev: FixedExpense[]) => prev.filter((e: FixedExpense) => e.id !== id));
             } catch (error: any) {
                 Alert.alert('Error', error.message);
             }
@@ -120,7 +120,7 @@ export function FixedExpensesScreen() {
                 month: month.firstDay,
                 due_day: dueDay,
             });
-            setExpenses((prev) => [newExpense, ...prev]);
+            setExpenses((prev: FixedExpense[]) => [newExpense, ...prev]);
             setShowAddModal(false);
 
             // Check budget alert
@@ -197,7 +197,7 @@ export function FixedExpensesScreen() {
                     data={expenses}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
-                    renderItem={({ item }) => {
+                    renderItem={({ item }: { item: FixedExpense }) => {
                         const catInfo = FIXED_EXPENSE_CATEGORIES.find(
                             (c) => c.value === item.category,
                         );

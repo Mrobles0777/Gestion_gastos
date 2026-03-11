@@ -66,7 +66,7 @@ export function CalendarScreen() {
     const handleTogglePaid = async (id: string, currentStatus: boolean) => {
         try {
             await toggleFixedExpensePaid(id, !currentStatus);
-            setExpenses(prev => prev.map(e => e.id === id ? { ...e, is_paid: !currentStatus } : e));
+            setExpenses((prev: FixedExpense[]) => prev.map((e: FixedExpense) => e.id === id ? { ...e, is_paid: !currentStatus } : e));
         } catch (error: any) {
             Alert.alert('Error', error.message);
         }
@@ -99,7 +99,7 @@ export function CalendarScreen() {
 
     const expensesByDay = useMemo(() => {
         const map: Record<number, FixedExpense[]> = {};
-        expenses.forEach(e => {
+        expenses.forEach((e: FixedExpense) => {
             const day = e.due_day || 1;
             if (!map[day]) map[day] = [];
             map[day].push(e);
@@ -109,7 +109,7 @@ export function CalendarScreen() {
 
     const filteredExpenses = useMemo(() => {
         if (selectedDay === null) return expenses;
-        return expenses.filter(e => e.due_day === selectedDay);
+        return expenses.filter((e: FixedExpense) => e.due_day === selectedDay);
     }, [expenses, selectedDay]);
 
     const { width } = useWindowDimensions();
@@ -158,8 +158,8 @@ export function CalendarScreen() {
                                 {daysInMonth.map((day, index) => {
                                     const isSelected = day === selectedDay;
                                     const dayExpenses = day ? expensesByDay[day] : [];
-                                    const hasUnpaid = dayExpenses?.some(e => !e.is_paid);
-                                    const hasPaid = dayExpenses?.some(e => e.is_paid);
+                                    const hasUnpaid = dayExpenses?.some((e: FixedExpense) => !e.is_paid);
+                                    const hasPaid = dayExpenses?.some((e: FixedExpense) => e.is_paid);
 
                                     return (
                                         <TouchableOpacity 
@@ -206,10 +206,10 @@ export function CalendarScreen() {
                         </View>
 
                         <FlatList
-                            data={filteredExpenses.sort((a, b) => (a.due_day || 1) - (b.due_day || 1))}
+                            data={filteredExpenses.sort((a: FixedExpense, b: FixedExpense) => (a.due_day || 1) - (b.due_day || 1))}
                             keyExtractor={(item) => item.id}
                             contentContainerStyle={styles.listContent}
-                            renderItem={({ item }) => (
+                            renderItem={({ item }: { item: FixedExpense }) => (
                                 <Card style={styles.expenseCard}>
                                     <TouchableOpacity 
                                         style={styles.expenseRow}
@@ -241,6 +241,7 @@ export function CalendarScreen() {
                             }
                             scrollEnabled={!isLargeScreen}
                         />
+                </View>
             </View>
         </ResponsiveScreen>
     );

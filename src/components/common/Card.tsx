@@ -13,7 +13,8 @@ interface CardProps {
     highlight?: boolean;
 }
 
-export function Card({ children, style, highlight = false }: CardProps) {
+export function Card(props: any) {
+    const { children, style, highlight = false } = props;
     return (
         <View
             style={[

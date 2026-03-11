@@ -23,15 +23,17 @@ interface ResponsiveScreenProps extends ScrollViewProps {
     refreshControl?: React.ReactElement;
 }
 
-export function ResponsiveScreen({
-    children,
-    maxWidth = 600,
-    containerStyle,
-    useScrollView = true,
-    contentContainerStyle,
-    refreshControl,
-    ...scrollViewProps
-}: ResponsiveScreenProps) {
+export function ResponsiveScreen(props: any) {
+    const {
+        children,
+        maxWidth = 600,
+        containerStyle,
+        useScrollView = true,
+        contentContainerStyle,
+        refreshControl,
+        ...scrollViewProps
+    } = props;
+    
     const { width } = useWindowDimensions();
     const isLarge = width > 850;
 
