@@ -25,10 +25,29 @@ import { FixedExpensesScreen } from '../screens/FixedExpensesScreen';
 import { DailyExpensesScreen } from '../screens/DailyExpensesScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { Colors, Typography } from '../theme/tokens';
+import { Colors, Typography, Radius } from '../theme/tokens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+function TabIconWithBackground({ 
+    Icon, 
+    color, 
+    focused 
+}: { 
+    Icon: any; 
+    color: string; 
+    focused: boolean 
+}) {
+    return (
+        <View style={[
+            styles.tabIconContainer,
+            focused && styles.tabIconContainerActive
+        ]}>
+            <Icon color={color} size={22} />
+        </View>
+    );
+}
 
 function MainTabs() {
     return (
@@ -38,15 +57,16 @@ function MainTabs() {
                 tabBarStyle: {
                     backgroundColor: Colors.background.card,
                     borderTopColor: Colors.neutral[700],
-                    height: 64,
-                    paddingBottom: 8,
+                    height: 70,
+                    paddingBottom: 12,
                     paddingTop: 8,
                 },
                 tabBarActiveTintColor: Colors.brand.primary,
                 tabBarInactiveTintColor: Colors.text.muted,
                 tabBarLabelStyle: {
                     fontFamily: Typography.family.medium,
-                    fontSize: 11,
+                    fontSize: 10,
+                    marginTop: 4,
                 },
             }}
         >
@@ -54,9 +74,9 @@ function MainTabs() {
                 name="Dashboard"
                 component={DashboardScreen}
                 options={{
-                    tabBarLabel: 'Dashboard',
-                    tabBarIcon: ({ color, size }) => (
-                        <LayoutDashboard color={color} size={size} />
+                    tabBarLabel: 'Resumen',
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabIconWithBackground Icon={LayoutDashboard} color={color} focused={focused} />
                     ),
                 }}
             />
@@ -65,8 +85,8 @@ function MainTabs() {
                 component={FixedExpensesScreen}
                 options={{
                     tabBarLabel: 'Fijos',
-                    tabBarIcon: ({ color, size }) => (
-                        <Landmark color={color} size={size} />
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabIconWithBackground Icon={Landmark} color={color} focused={focused} />
                     ),
                 }}
             />
@@ -75,8 +95,8 @@ function MainTabs() {
                 component={DailyExpensesScreen}
                 options={{
                     tabBarLabel: 'Diarios',
-                    tabBarIcon: ({ color, size }) => (
-                        <ShoppingBag color={color} size={size} />
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabIconWithBackground Icon={ShoppingBag} color={color} focused={focused} />
                     ),
                 }}
             />
@@ -85,8 +105,8 @@ function MainTabs() {
                 component={CalendarScreen}
                 options={{
                     tabBarLabel: 'Calendario',
-                    tabBarIcon: ({ color, size }) => (
-                        <Calendar color={color} size={size} />
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabIconWithBackground Icon={Calendar} color={color} focused={focused} />
                     ),
                 }}
             />
@@ -95,8 +115,8 @@ function MainTabs() {
                 component={ProfileScreen}
                 options={{
                     tabBarLabel: 'Perfil',
-                    tabBarIcon: ({ color, size }) => (
-                        <User color={color} size={size} />
+                    tabBarIcon: ({ color, focused }) => (
+                        <TabIconWithBackground Icon={User} color={color} focused={focused} />
                     ),
                 }}
             />
@@ -175,5 +195,15 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background.main,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    tabIconContainer: {
+        width: 48,
+        height: 32,
+        borderRadius: Radius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabIconContainerActive: {
+        backgroundColor: Colors.brand.primary + '15', // very soft primary
     },
 });

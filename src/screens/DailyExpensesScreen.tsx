@@ -188,8 +188,11 @@ export function DailyExpensesScreen() {
                     scrollEnabled={isLargeScreen}
                     style={isLargeScreen ? { flex: 1 } : null}
                     contentContainerStyle={styles.listContent}
-                    renderSectionHeader={({ section: { title } }: { section: { title: string } }) => (
-                        <Text style={styles.sectionHeader}>{title}</Text>
+                    renderSectionHeader={({ section: { title, dayTotal } }: { section: { title: string; dayTotal: number } }) => (
+                        <View style={styles.sectionHeaderContainer}>
+                            <Text style={styles.sectionHeader}>{title}</Text>
+                            <Text style={styles.sectionHeaderTotal}>Total: {formatCurrency(dayTotal)}</Text>
+                        </View>
                     )}
                     renderItem={({ item }: { item: DailyExpense }) => {
                         const catInfo = DAILY_EXPENSE_CATEGORIES.find(
@@ -233,6 +236,7 @@ function groupByDate(expenses: DailyExpense[]) {
         .sort(([a], [b]) => b.localeCompare(a))
         .map(([date, data]) => ({
             title: formatDate(date),
+            dayTotal: data.reduce((sum, e) => sum + e.amount, 0),
             data,
         }));
 }
@@ -389,13 +393,24 @@ const styles = StyleSheet.create({
         paddingTop: 0,
         paddingBottom: 100, // Clearance for tab bar
     },
-    sectionHeader: {
-        fontFamily: Typography.family.semiBold,
-        fontSize: Typography.size.small,
-        color: Colors.text.secondary,
+    sectionHeaderContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginTop: Spacing.md,
         marginBottom: Spacing.sm,
+    },
+    sectionHeader: {
+        fontFamily: Typography.family.semiBold,
+        fontSize: Typography.size.tiny,
+        color: Colors.text.secondary,
         textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    sectionHeaderTotal: {
+        fontFamily: Typography.family.bold,
+        fontSize: Typography.size.tiny,
+        color: Colors.text.primary,
     },
     expenseCard: {
         padding: Spacing.md,
