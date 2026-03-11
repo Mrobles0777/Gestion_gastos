@@ -355,6 +355,12 @@ export async function checkAndTriggerBudgetAlert(
 
     // Invoke Edge Function
     const targetEmail = profile?.alert_email || email;
+
+    if (!targetEmail) {
+        console.warn('[BudgetAlert] No destination email found for user:', userId);
+        return false;
+    }
+
     const payload = {
         user_id: userId,
         email: targetEmail,
@@ -367,6 +373,7 @@ export async function checkAndTriggerBudgetAlert(
     };
 
     console.log('--- Triggering Budget Alert ---');
+    console.log('Target Email:', targetEmail);
     console.log('Payload:', payload);
 
     const { data, error } = await supabase.functions.invoke('budget-alert', {

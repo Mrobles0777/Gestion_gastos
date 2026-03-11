@@ -4,7 +4,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY_BUDGET') ?? Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL = 'onboarding@resend.dev';
 
 const corsHeaders = {
@@ -32,15 +32,21 @@ serve(async (req) => {
     const payload: AlertPayload = await req.json();
     const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
 
-    console.log(`[BudgetAlert] Proc de alerta para ${email}. Consumo: ${pct}%`);
+    console.log(`[BudgetAlert] Procesando alerta para ${email}. Consumo: ${pct}%`);
 
-    if (!email || !salary) {
-      throw new Error('Missing required fields: email or salary');
+    if (!email) {
+      console.error('[BudgetAlert] ERROR: El email de destino está vacío.');
+      throw new Error('Destination email is required');
+    }
+
+    if (!salary && salary !== 0) {
+      console.error('[BudgetAlert] ERROR: El sueldo no está definido.');
+      throw new Error('Salary value is required');
     }
 
     if (!RESEND_API_KEY) {
-      console.error('[BudgetAlert] ERROR: RESEND_API_KEY no configurada.');
-      return new Response(JSON.stringify({ error: 'Mail service not configured' }), { 
+      console.error('[BudgetAlert] ERROR: RESEND_API_KEY_BUDGET no configurada en los secrets.');
+      return new Response(JSON.stringify({ error: 'Mail service not configured (Budget)' }), { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
