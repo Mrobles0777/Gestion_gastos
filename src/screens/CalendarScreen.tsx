@@ -114,7 +114,7 @@ export function CalendarScreen() {
     }, [expenses, selectedDay]);
 
     const { width } = useWindowDimensions();
-    const isLargeScreen = width > 850;
+    const isLargeScreen = width > 600; // Lower threshold to catch more devices
 
     if (isLoading && expenses.length === 0) {
         return (
@@ -207,12 +207,11 @@ export function CalendarScreen() {
                         </View>
 
                         <ScrollView 
-                            horizontal={isLargeScreen}
-                            showsHorizontalScrollIndicator={isLargeScreen}
-                            scrollEnabled={isLargeScreen}
-                            contentContainerStyle={isLargeScreen ? [styles.desktopGridScroll, { paddingBottom: 20 }] : null}
+                            horizontal={true} // Enable for all if needed, but primarily for grid wrapping
+                            showsHorizontalScrollIndicator={true}
+                            contentContainerStyle={[styles.desktopGridScroll, { paddingBottom: 20 }]}
                         >
-                            <View style={isLargeScreen ? styles.desktopGridContainer : styles.listContent}>
+                            <View style={styles.desktopGridContainer}>
                                 {filteredExpenses
                                     .sort((a: FixedExpense, b: FixedExpense) => (a.due_day || 1) - (b.due_day || 1))
                                     .map((item: FixedExpense) => (
@@ -223,27 +222,27 @@ export function CalendarScreen() {
                                             >
                                                 <View style={styles.statusIcon}>
                                                     {item.is_paid ? (
-                                                        <CheckCircle2 color={Colors.status.success} size={isLargeScreen ? 18 : 22} />
+                                                        <CheckCircle2 color={Colors.status.success} size={16} />
                                                     ) : (
-                                                        <Circle color={Colors.neutral[700]} size={isLargeScreen ? 18 : 22} />
+                                                        <Circle color={Colors.neutral[700]} size={16} />
                                                     )}
                                                 </View>
                                                 <View style={styles.expenseInfo}>
                                                     <Text style={[
                                                         styles.expenseTitle, 
                                                         item.is_paid && styles.textPaid,
-                                                        isLargeScreen && styles.expenseTitleCompact
+                                                        styles.expenseTitleCompact
                                                     ]}>
                                                         {item.label || item.category}
                                                     </Text>
-                                                    <Text style={[styles.expenseDue, isLargeScreen && styles.expenseDueCompact]}>
+                                                    <Text style={[styles.expenseDue, styles.expenseDueCompact]}>
                                                         Día {item.due_day || 1}
                                                     </Text>
                                                 </View>
                                                 <Text style={[
                                                     styles.expenseAmount, 
                                                     item.is_paid && styles.textPaid,
-                                                    isLargeScreen && styles.expenseAmountCompact
+                                                    styles.expenseAmountCompact
                                                 ]}>
                                                     {formatCurrency(item.amount)}
                                                 </Text>
@@ -421,7 +420,7 @@ const styles = StyleSheet.create({
     desktopGridContainer: {
         flexDirection: 'column',
         flexWrap: 'wrap',
-        height: 480, // Enough to fit ~6 compact items vertically
+        height: 380, // Forced height to ensure exactly 6 items vertically
         paddingRight: Spacing.xl,
         gap: Spacing.sm,
     },
@@ -434,9 +433,9 @@ const styles = StyleSheet.create({
         padding: Spacing.md,
     },
     expenseCardCompact: {
-        padding: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        width: 300, // Fixed width for columns
+        padding: Spacing.xs, // Even smaller padding
+        paddingHorizontal: Spacing.sm,
+        width: 260, // Narrower cards to fit more columns
         marginBottom: 0,
     },
     expenseRow: {
