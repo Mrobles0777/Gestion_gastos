@@ -8,8 +8,8 @@ import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
+    ScrollView,
     StyleSheet,
-    FlatList,
     Alert,
     TouchableOpacity,
     ActivityIndicator,
@@ -45,14 +45,21 @@ export function FixedExpensesScreen() {
     const { user } = useAuth();
     const { width } = useWindowDimensions();
     const isLargeScreen = width > 850;
-    
-    // Dynamic columns for grid (max 6)
-    const numColumns = Math.min(6, Math.max(1, Math.floor((width - Spacing.lg * 2) / 250)));
-    
     const [expenses, setExpenses] = useState<FixedExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null);
+
+    // Grouping logic: columns of 6
+    const groupIntoChunks = (arr: any[], size: number) => {
+        const chunks = [];
+        for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size));
+        }
+        return chunks;
+    };
+
+    const expenseColumns = groupIntoChunks(expenses, 6);
 
     const month = getCurrentMonthKey();
 
@@ -210,34 +217,36 @@ export function FixedExpensesScreen() {
                     />
                 </View>
             ) : (
-                <FlatList
-                    key={`fixed-expenses-grid-${numColumns}`}
-                    data={expenses}
-                    numColumns={numColumns}
-                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
-                    keyExtractor={(item: FixedExpense) => item.id}
-                    scrollEnabled={isLargeScreen}
-                    style={isLargeScreen ? { flex: 1 } : null}
-                    contentContainerStyle={styles.listContent}
-                    renderItem={({ item }: { item: FixedExpense }) => {
-                        const catInfo = FIXED_EXPENSE_CATEGORIES.find(
-                            (c) => c.value === item.category,
-                        );
-                        return (
-                            <ExpenseCard
-                                title={item.label || catInfo?.label || item.category}
-                                amount={item.amount}
-                                categoryLabel={catInfo?.label || item.category}
-                                categoryIcon={catInfo?.icon || 'MoreHorizontal'}
-                                colorKey={catInfo?.colorKey || 'other'}
-                                subtitle={`Vence día ${item.due_day || 1}`}
-                                isPaid={item.is_paid}
-                                onPress={() => toggleFixedExpensePaid(item.id, !item.is_paid).then(() => loadData(false))}
-                                onActionPress={() => handleActionPress(item)}
-                            />
-                        );
-                    }}
-                />
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={true}
+                    contentContainerStyle={styles.horizontalListContent}
+                >
+                    {expenseColumns.map((column, colIndex) => (
+                        <View key={`col-${colIndex}`} style={styles.column}>
+                            {column.map((item) => {
+                                const catInfo = FIXED_EXPENSE_CATEGORIES.find(
+                                    (c) => c.value === item.category,
+                                );
+                                return (
+                                    <View key={item.id} style={styles.cardWrapper}>
+                                        <ExpenseCard
+                                            title={item.label || catInfo?.label || item.category}
+                                            amount={item.amount}
+                                            categoryLabel={catInfo?.label || item.category}
+                                            categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                            colorKey={catInfo?.colorKey || 'other'}
+                                            subtitle={`Vence día ${item.due_day || 1}`}
+                                            isPaid={item.is_paid}
+                                            onPress={() => toggleFixedExpensePaid(item.id, !item.is_paid).then(() => loadData(false))}
+                                            onActionPress={() => handleActionPress(item)}
+                                        />
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    ))}
+                </ScrollView>
             )}
 
             {/* Add Modal */}
@@ -487,10 +496,18 @@ const styles = StyleSheet.create({
     },
     responsiveContent: {
         paddingHorizontal: 0,
-        maxWidth: 1400,
+        maxWidth: '100.1%', // Use full width for horizontal scroll
     },
-    columnWrapper: {
+    horizontalListContent: {
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: 40,
         gap: Spacing.md,
+    },
+    column: {
+        width: 280,
+    },
+    cardWrapper: {
+        marginBottom: Spacing.xs,
     },
     title: {
         fontFamily: Typography.family.bold,

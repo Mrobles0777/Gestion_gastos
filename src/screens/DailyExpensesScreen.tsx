@@ -9,6 +9,7 @@ import {
     View,
     Text,
     StyleSheet,
+    ScrollView,
     SectionList,
     Alert,
     TouchableOpacity,
@@ -136,8 +137,20 @@ export function DailyExpensesScreen() {
 
     const total = expenses.reduce((sum: number, e: DailyExpense) => sum + e.amount, 0);
 
+    // Grouping logic: columns of 6
+    const groupIntoChunks = (arr: any[], size: number) => {
+        const chunks = [];
+        for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size));
+        }
+        return chunks;
+    };
+
     // Group by date for SectionList
-    const sections = groupByDate(expenses);
+    const sections = groupByDate(expenses).map(section => ({
+        ...section,
+        data: [groupIntoChunks(section.data, 6)] // Wrap chunks in one item per section
+    }));
 
     if (isLoading) {
         return (
@@ -184,9 +197,9 @@ export function DailyExpensesScreen() {
             ) : (
                 <SectionList
                     sections={sections}
-                    keyExtractor={(item: DailyExpense) => item.id}
-                    scrollEnabled={isLargeScreen}
-                    style={isLargeScreen ? { flex: 1 } : null}
+                    keyExtractor={(item, index) => `col-${index}`}
+                    scrollEnabled={true}
+                    style={{ flex: 1 }}
                     contentContainerStyle={styles.listContent}
                     renderSectionHeader={({ section: { title, dayTotal } }: { section: { title: string; dayTotal: number } }) => (
                         <View style={styles.sectionHeaderContainer}>
@@ -199,25 +212,37 @@ export function DailyExpensesScreen() {
                             </View>
                         </View>
                     )}
-                    renderItem={({ item }: { item: DailyExpense }) => {
-                        const catInfo = DAILY_EXPENSE_CATEGORIES.find(
-                            (c) => c.value === item.category,
-                        ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
-                        
+                    renderItem={({ item: columns }: { item: DailyExpense[][] }) => {
                         return (
-                            <View style={[
-                                styles.gridItem,
-                                { width: isLargeScreen ? (width > 1200 ? '16.6%' : width > 800 ? '33.3%' : '50%') : '100%' }
-                            ]}>
-                                <ExpenseCard
-                                    title={item.description}
-                                    amount={item.amount}
-                                    categoryLabel={catInfo?.label || item.category || 'Otros'}
-                                    categoryIcon={catInfo?.icon || 'MoreHorizontal'}
-                                    colorKey={catInfo?.colorKey || 'other'}
-                                    onActionPress={() => handleActionPress(item)}
-                                />
-                            </View>
+                            <ScrollView 
+                                horizontal 
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.horizontalScroll}
+                                contentContainerStyle={styles.horizontalScrollContent}
+                            >
+                                {columns.map((column, colIndex) => (
+                                    <View key={`col-${colIndex}`} style={styles.column}>
+                                        {column.map((expense) => {
+                                            const catInfo = DAILY_EXPENSE_CATEGORIES.find(
+                                                (c) => c.value === expense.category,
+                                            ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
+                                            
+                                            return (
+                                                <View key={expense.id} style={styles.cardWrapper}>
+                                                    <ExpenseCard
+                                                        title={expense.description}
+                                                        amount={expense.amount}
+                                                        categoryLabel={catInfo?.label || expense.category || 'Otros'}
+                                                        categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                                        colorKey={catInfo?.colorKey || 'other'}
+                                                        onActionPress={() => handleActionPress(expense)}
+                                                    />
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                ))}
+                            </ScrollView>
                         );
                     }}
                 />
@@ -399,41 +424,21 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     listContent: {
-        padding: Spacing.sm,
-        paddingTop: 0,
-        paddingBottom: 100, // Clearance for tab bar
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: 100,
+    },
+    horizontalScroll: {
+        marginBottom: Spacing.md,
+    },
+    horizontalScrollContent: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
+        gap: Spacing.md,
     },
-    sectionHeaderContainer: {
-        marginTop: Spacing.lg,
-        marginBottom: Spacing.sm,
+    column: {
+        width: 280,
     },
-    sectionHeaderTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-    },
-    headerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: Colors.neutral[700],
-        opacity: 0.5,
-    },
-    sectionHeader: {
-        fontFamily: Typography.family.semiBold,
-        fontSize: Typography.size.tiny,
-        color: Colors.text.secondary,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    sectionHeaderTotal: {
-        fontFamily: Typography.family.bold,
-        fontSize: Typography.size.tiny,
-        color: Colors.brand.primary,
-    },
-    gridItem: {
-        paddingHorizontal: 4,
+    cardWrapper: {
+        marginBottom: Spacing.xs,
     },
     expenseCard: {
         padding: Spacing.md,
