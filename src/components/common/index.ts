@@ -3,3 +3,4 @@ export { Input } from './Input';
 export { Card } from './Card';
 export { ProgressBar } from './ProgressBar';
 export { ResponsiveScreen } from './ResponsiveScreen';
+export { PaymentReminderModal } from './PaymentReminderModal';

@@ -22,9 +22,10 @@ import {
     ChevronRight, 
     CheckCircle2, 
     Circle,
-    Calendar as CalendarIcon 
+    Calendar as CalendarIcon,
+    Bell 
 } from 'lucide-react-native';
-import { Card, ResponsiveScreen } from '../components/common';
+import { Card, ResponsiveScreen, PaymentReminderModal } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { getFixedExpenses, toggleFixedExpensePaid } from '../lib/dataService';
 import { getCurrentMonthKey, formatCurrency } from '../lib/dateHelpers';
@@ -37,6 +38,7 @@ export function CalendarScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
+    const [showReminder, setShowReminder] = useState(false);
 
     const monthKey = useMemo(() => {
         const year = selectedDate.getFullYear();
@@ -143,8 +145,23 @@ export function CalendarScreen() {
                         <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowButton}>
                             <ChevronRight color={Colors.text.primary} size={20} />
                         </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => setShowReminder(true)} 
+                            style={[styles.arrowButton, { marginLeft: Spacing.sm, backgroundColor: Colors.brand.primary }]}
+                        >
+                            <Bell color={Colors.neutral.white} size={20} />
+                        </TouchableOpacity>
                     </View>
                 </View>
+
+                <PaymentReminderModal 
+                    visible={showReminder}
+                    onClose={() => setShowReminder(false)}
+                    expenses={expenses.filter(e => e.due_day === new Date().getDate() && !e.is_paid).length > 0 
+                        ? expenses.filter(e => e.due_day === new Date().getDate() && !e.is_paid)
+                        : expenses.slice(0, 2) // Simulation fallback
+                    }
+                />
 
                 <View style={[isLargeScreen && styles.mainLayout, isLargeScreen && styles.mainLayoutDesktop]}>
                     {/* Left Column: Calendar */}
