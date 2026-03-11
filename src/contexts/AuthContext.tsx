@@ -23,10 +23,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-            setSession(currentSession);
-            setIsLoading(false);
-        });
+        // Safety timeout to prevent permanent hang
+        const timeout = setTimeout(() => {
+            if (isLoading) {
+                console.warn('Auth session loading timed out.');
+                setIsLoading(false);
+            }
+        }, 5000);
+
+        supabase.auth.getSession()
+            .then(({ data: { session: currentSession } }) => {
+                setSession(currentSession);
+            })
+            .catch(err => {
+                console.error('Failed to get auth session:', err);
+            })
+            .finally(() => {
+                clearTimeout(timeout);
+                setIsLoading(false);
+            });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (_event, newSession) => {

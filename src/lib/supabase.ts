@@ -11,9 +11,13 @@ import { Platform } from 'react-native';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('CRITICAL: Supabase environment variables are missing.');
+}
+
 /**
  * SecureStore adapter for Supabase Auth session persistence on mobile.
- * Falls back to in-memory on web.
+ * Falls back to localStorage on web if available.
  */
 const ExpoSecureStoreAdapter =
     Platform.OS !== 'web'
@@ -23,7 +27,17 @@ const ExpoSecureStoreAdapter =
                 SecureStore.setItemAsync(key, value),
             removeItem: (key: string) => SecureStore.deleteItemAsync(key),
         }
-        : undefined;
+        : (typeof window !== 'undefined' && window.localStorage) ? {
+            getItem: (key: string) => Promise.resolve(window.localStorage.getItem(key)),
+            setItem: (key: string, value: string) => {
+                window.localStorage.setItem(key, value);
+                return Promise.resolve();
+            },
+            removeItem: (key: string) => {
+                window.localStorage.removeItem(key);
+                return Promise.resolve();
+            },
+        } : undefined;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {

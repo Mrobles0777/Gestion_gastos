@@ -19,6 +19,33 @@ import type {
 
 const isWeb = Platform.OS === 'web';
 
+const storage = {
+    getItem: async (key: string) => {
+        if (isWeb) {
+            return (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(key) : null;
+        }
+        return SecureStore.getItemAsync(key);
+    },
+    setItem: async (key: string, value: string) => {
+        if (isWeb) {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(key, value);
+            }
+            return;
+        }
+        return SecureStore.setItemAsync(key, value);
+    },
+    deleteItem: async (key: string) => {
+        if (isWeb) {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.removeItem(key);
+            }
+            return;
+        }
+        return SecureStore.deleteItemAsync(key);
+    },
+};
+
 const CACHE_KEYS = {
     PROFILE: (userId: string) => `cache_profile_${userId}`,
     DASHBOARD: (userId: string) => `cache_dashboard_${userId}`,
@@ -42,9 +69,9 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = DEFAULT_T
 export async function getProfile(userId: string, useCacheFirst = false): Promise<Profile | null> {
     const cacheKey = CACHE_KEYS.PROFILE(userId);
 
-    if (useCacheFirst && !isWeb) {
+    if (useCacheFirst) {
         try {
-            const cached = await SecureStore.getItemAsync(cacheKey);
+            const cached = await storage.getItem(cacheKey);
             if (cached) return JSON.parse(cached);
         } catch (e) {
             console.warn('Failed to read profile from cache', e);
@@ -64,8 +91,8 @@ export async function getProfile(userId: string, useCacheFirst = false): Promise
             throw new Error(`getProfile: ${error.message}`);
         }
 
-        if (data && !isWeb) {
-            await SecureStore.setItemAsync(cacheKey, JSON.stringify(data));
+        if (data) {
+            await storage.setItem(cacheKey, JSON.stringify(data));
         }
         return data;
     } catch (err: any) {
@@ -102,9 +129,9 @@ export async function getFixedExpenses(
 ): Promise<FixedExpense[]> {
     const cacheKey = CACHE_KEYS.FIXED_EXPENSES(userId, monthFirstDay);
 
-    if (useCacheFirst && !isWeb) {
+    if (useCacheFirst) {
         try {
-            const cached = await SecureStore.getItemAsync(cacheKey);
+            const cached = await storage.getItem(cacheKey);
             if (cached) return JSON.parse(cached);
         } catch (e) {
             console.warn('Failed to read fixed expenses from cache', e);
@@ -124,13 +151,11 @@ export async function getFixedExpenses(
         if (error) throw new Error(`getFixedExpenses: ${error.message}`);
         
         const result = data ?? [];
-        if (!isWeb) {
-            await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
-        }
+        await storage.setItem(cacheKey, JSON.stringify(result));
         return result;
     } catch (err: any) {
-        if (err.message === 'TIMEOUT' && !isWeb) {
-            const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
+        if (err.message === 'TIMEOUT') {
+            const cached = await storage.getItem(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
         throw err;
@@ -188,9 +213,9 @@ export async function getDailyExpenses(
 ): Promise<DailyExpense[]> {
     const cacheKey = CACHE_KEYS.DAILY_EXPENSES(userId, startDate, endDate);
 
-    if (useCacheFirst && !isWeb) {
+    if (useCacheFirst) {
         try {
-            const cached = await SecureStore.getItemAsync(cacheKey);
+            const cached = await storage.getItem(cacheKey);
             if (cached) return JSON.parse(cached);
         } catch (e) {
             console.warn('Failed to read daily expenses from cache', e);
@@ -263,9 +288,9 @@ export async function getDashboardData(userId: string, useCacheFirst = false): P
     const cacheKey = CACHE_KEYS.DASHBOARD(userId);
     const month = getCurrentMonthKey();
 
-    if (useCacheFirst && !isWeb) {
+    if (useCacheFirst) {
         try {
-            const cached = await SecureStore.getItemAsync(cacheKey);
+            const cached = await storage.getItem(cacheKey);
             if (cached) return JSON.parse(cached);
         } catch (e) {
             console.warn('Failed to read dashboard from cache', e);
@@ -366,11 +391,9 @@ export async function clearUserCache(userId: string): Promise<void> {
         CACHE_KEYS.DAILY_EXPENSES(userId, month.firstDay, month.lastDay),
     ];
 
-    if (isWeb) return;
-
     for (const key of keys) {
         try {
-            await SecureStore.deleteItemAsync(key);
+            await storage.deleteItem(key);
         } catch (e) {
             console.warn(`Failed to delete cache key: ${key}`, e);
         }
