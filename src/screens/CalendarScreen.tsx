@@ -239,7 +239,7 @@ export function CalendarScreen() {
                                     <Text style={styles.emptyText}>No hay gastos.</Text>
                                 </View>
                             }
-                            scrollEnabled={!isLargeScreen}
+                            scrollEnabled={isLargeScreen}
                         />
                 </View>
             </View>
@@ -253,7 +253,6 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background.main,
     },
     responsiveContent: {
-        paddingHorizontal: 0,
         flex: 1,
     },
     centered: {
@@ -300,6 +299,7 @@ const styles = StyleSheet.create({
     },
     mainLayout: {
         flex: 1,
+        minHeight: 0, // Ensure flex:1 works for scroll containers
     },
     mainLayoutDesktop: {
         flexDirection: 'row',

@@ -14,6 +14,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Modal,
+    useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -50,6 +51,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 export function FixedExpensesScreen() {
     const { user } = useAuth();
+    const { width } = useWindowDimensions();
+    const isLargeScreen = width > 850;
     const [expenses, setExpenses] = useState<FixedExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -162,6 +165,7 @@ export function FixedExpensesScreen() {
     return (
         <ResponsiveScreen
             maxWidth={800}
+            useScrollView={!isLargeScreen}
             contentContainerStyle={styles.responsiveContent}
         >
             {/* Header */}
@@ -195,7 +199,9 @@ export function FixedExpensesScreen() {
             ) : (
                 <FlatList
                     data={expenses}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item: FixedExpense) => item.id}
+                    scrollEnabled={isLargeScreen}
+                    style={{ flex: 1 }}
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }: { item: FixedExpense }) => {
                         const catInfo = FIXED_EXPENSE_CATEGORIES.find(

@@ -14,6 +14,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Modal,
+    useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -35,6 +36,8 @@ import type { DailyExpense } from '../types';
 
 export function DailyExpensesScreen() {
     const { user } = useAuth();
+    const { width } = useWindowDimensions();
+    const isLargeScreen = width > 850;
     const [expenses, setExpenses] = useState<DailyExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -128,7 +131,7 @@ export function DailyExpensesScreen() {
 
     return (
         <ResponsiveScreen
-            useScrollView={false}
+            useScrollView={!isLargeScreen}
             maxWidth={800}
             contentContainerStyle={styles.responsiveContent}
         >
@@ -164,6 +167,8 @@ export function DailyExpensesScreen() {
                 <SectionList
                     sections={sections}
                     keyExtractor={(item: DailyExpense) => item.id}
+                    scrollEnabled={isLargeScreen}
+                    style={{ flex: 1 }}
                     contentContainerStyle={styles.listContent}
                     renderSectionHeader={({ section: { title } }: { section: { title: string } }) => (
                         <Text style={styles.sectionHeader}>{title}</Text>
