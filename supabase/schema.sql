@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS fixed_expenses (
   category   TEXT NOT NULL CHECK (category IN ('arriendo','luz','agua','internet','otros')),
   label      TEXT,
   amount     NUMERIC NOT NULL CHECK (amount > 0),
+  due_day    INTEGER CHECK (due_day >= 1 AND due_day <= 31),
+  is_paid    BOOLEAN DEFAULT false,
   month      DATE NOT NULL, -- first day of month, e.g. '2026-03-01'
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -109,3 +111,24 @@ CREATE POLICY "Users can update own daily expenses"
 CREATE POLICY "Users can delete own daily expenses"
   ON daily_expenses FOR DELETE
   USING (auth.uid() = user_id);
+
+-- ────────────────────── AUTOMATION (PHASE 15) ───────────────────
+-- Note: Requires pg_cron and pg_net extensions. 
+-- Run this manually in SQL Editor replacing placeholders.
+
+/*
+CREATE EXTENSION IF NOT EXISTS pg_net;
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+SELECT cron.schedule(
+  'daily-payment-reminder',
+  '0 11 * * *', -- 08:00 AM Santiago (UTC-3)
+  $$
+  SELECT net.http_post(
+    url := 'https://[TU-PROYECTO].supabase.co/functions/v1/payment-reminder',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer [TU-SERVICE-ROLE-KEY]"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
+*/
