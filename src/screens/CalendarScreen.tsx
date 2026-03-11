@@ -26,7 +26,7 @@ import { Card } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { getFixedExpenses, toggleFixedExpensePaid } from '../lib/dataService';
 import { getCurrentMonthKey, formatCurrency } from '../lib/dateHelpers';
-import { Colors, Spacing, Typography, Radius } from '../theme/tokens';
+import { Colors, Spacing, Typography, Radius, Shadows } from '../theme/tokens';
 import type { FixedExpense } from '../types';
 
 export function CalendarScreen() {
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
         marginTop: 0,
         padding: Spacing.md,
         borderRadius: Radius.xl,
-        ...Colors.shadow.sm,
+        ...Shadows.card,
     },
     weekDays: {
         flexDirection: 'row',
