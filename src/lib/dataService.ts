@@ -389,9 +389,11 @@ export async function checkAndTriggerBudgetAlert(
     return true;
 }
 
-export async function triggerPaymentReminder(): Promise<{ success: boolean; message?: string }> {
-    console.log('--- Triggering Payment Reminder Simulation ---');
-    const { data, error } = await supabase.functions.invoke('payment-reminder');
+export async function triggerPaymentReminder(isSimulation = false): Promise<{ success: boolean; message?: string }> {
+    console.log(`--- Triggering Payment Reminder (Simulation: ${isSimulation}) ---`);
+    const { data, error } = await supabase.functions.invoke('payment-reminder', {
+        body: { is_simulation: isSimulation }
+    });
 
     if (error) {
         console.error('Payment reminder edge function error:', error);

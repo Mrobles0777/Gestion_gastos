@@ -35,10 +35,10 @@ export function PaymentReminderModal({ visible, onClose, expenses }: PaymentRemi
     const handleSendSimulation = async () => {
         setIsSending(true);
         try {
-            await triggerPaymentReminder();
+            await triggerPaymentReminder(true);
             Alert.alert(
                 'Simulación Exitosa',
-                'Se ha solicitado el envío del recordatorio. Si tienes gastos vencidos hoy, recibirás un email pronto.'
+                'Se ha solicitado el envío del recordatorio de prueba.'
             );
         } catch (error: any) {
             Alert.alert('Error en Simulación', error.message);
