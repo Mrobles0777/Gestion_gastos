@@ -23,7 +23,7 @@ import {
     Pencil,
     Trash2,
 } from 'lucide-react-native';
-import { Card, Button, Input, ResponsiveScreen } from '../components/common';
+import { Card, Button, Input, ResponsiveScreen, ActionMenu } from '../components/common';
 import { ExpenseCard } from '../components/expenses';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -49,6 +49,7 @@ export function FixedExpensesScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null);
+    const [actionMenuExpense, setActionMenuExpense] = useState<FixedExpense | null>(null);
 
     // Grouping logic: columns of 6
     const groupIntoChunks = (arr: any[], size: number) => {
@@ -156,20 +157,7 @@ export function FixedExpensesScreen() {
     }
 
     const handleActionPress = (item: FixedExpense) => {
-        Alert.alert(
-            item.label || item.category,
-            'Selecciona una acción:',
-            [
-                { text: 'Editar', onPress: () => setEditingExpense(item) },
-                { 
-                    text: 'Eliminar', 
-                    onPress: () => handleDelete(item.id),
-                    style: 'destructive' 
-                },
-                { text: 'Cancelar', style: 'cancel' },
-            ],
-            { cancelable: true }
-        );
+        setActionMenuExpense(item);
     };
 
     const total = expenses.reduce((sum: number, e: FixedExpense) => sum + e.amount, 0);
@@ -247,6 +235,17 @@ export function FixedExpensesScreen() {
                         </View>
                     ))}
                 </ScrollView>
+            )}
+
+            {/* Action Menu */}
+            {actionMenuExpense && (
+                <ActionMenu
+                    visible={!!actionMenuExpense}
+                    title={actionMenuExpense.label || actionMenuExpense.category}
+                    onClose={() => setActionMenuExpense(null)}
+                    onEdit={() => setEditingExpense(actionMenuExpense)}
+                    onDelete={() => handleDelete(actionMenuExpense.id)}
+                />
             )}
 
             {/* Add Modal */}

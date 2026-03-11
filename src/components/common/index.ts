@@ -4,3 +4,4 @@ export { Card } from './Card';
 export { ProgressBar } from './ProgressBar';
 export { ResponsiveScreen } from './ResponsiveScreen';
 export { PaymentReminderModal } from './PaymentReminderModal';
+export { ActionMenu } from './ActionMenu';

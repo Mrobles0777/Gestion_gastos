@@ -23,7 +23,7 @@ import {
     MoreVertical,
     Trash2,
 } from 'lucide-react-native';
-import { Card, Button, Input, ResponsiveScreen } from '../components/common';
+import { Card, Button, Input, ResponsiveScreen, ActionMenu } from '../components/common';
 import { ExpenseCard } from '../components/expenses';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -46,6 +46,7 @@ export function DailyExpensesScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingExpense, setEditingExpense] = useState<DailyExpense | null>(null);
+    const [actionMenuExpense, setActionMenuExpense] = useState<DailyExpense | null>(null);
 
     const month = getCurrentMonthKey();
 
@@ -139,20 +140,7 @@ export function DailyExpensesScreen() {
     }
 
     const handleActionPress = (item: DailyExpense) => {
-        Alert.alert(
-            item.description,
-            'Selecciona una acción:',
-            [
-                { text: 'Editar', onPress: () => setEditingExpense(item) },
-                { 
-                    text: 'Eliminar', 
-                    onPress: () => handleDelete(item.id),
-                    style: 'destructive' 
-                },
-                { text: 'Cancelar', style: 'cancel' },
-            ],
-            { cancelable: true }
-        );
+        setActionMenuExpense(item);
     };
 
     const total = expenses.reduce((sum: number, e: DailyExpense) => sum + e.amount, 0);
@@ -241,6 +229,14 @@ export function DailyExpensesScreen() {
                     ))}
                 </ScrollView>
             )}
+
+            <ActionMenu
+                visible={!!actionMenuExpense}
+                title={actionMenuExpense?.description || 'Gasto Diarios'}
+                onClose={() => setActionMenuExpense(null)}
+                onEdit={() => actionMenuExpense && setEditingExpense(actionMenuExpense)}
+                onDelete={() => actionMenuExpense && handleDelete(actionMenuExpense.id)}
+            />
 
             {/* Add Modal */}
             <AddDailyExpenseModal
