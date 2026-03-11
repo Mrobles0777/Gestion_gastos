@@ -40,7 +40,7 @@ export function ResponsiveScreen(props: any) {
     const content = (
         <View style={[
             styles.inner,
-            { maxWidth: isLarge ? (maxWidth > 600 ? maxWidth : 800) : '100.1%' },
+            { maxWidth: isLarge ? (maxWidth > 600 ? maxWidth : 1200) : '100.1%' },
             containerStyle
         ]}>
             {children}

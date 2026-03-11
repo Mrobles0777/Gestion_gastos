@@ -105,6 +105,7 @@ export function ExpenseCard({
 
 const styles = StyleSheet.create({
     cardContainer: {
+        flex: 1,
         padding: 0,
         marginBottom: Spacing.sm,
         overflow: 'hidden',

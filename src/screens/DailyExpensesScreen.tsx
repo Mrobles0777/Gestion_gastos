@@ -190,8 +190,13 @@ export function DailyExpensesScreen() {
                     contentContainerStyle={styles.listContent}
                     renderSectionHeader={({ section: { title, dayTotal } }: { section: { title: string; dayTotal: number } }) => (
                         <View style={styles.sectionHeaderContainer}>
-                            <Text style={styles.sectionHeader}>{title}</Text>
-                            <Text style={styles.sectionHeaderTotal}>Total: {formatCurrency(dayTotal)}</Text>
+                            <View style={styles.sectionHeaderTitleContainer}>
+                                <Text style={styles.sectionHeader}>{title}</Text>
+                                <View style={styles.headerLine} />
+                                <Text style={styles.sectionHeaderTotal}>
+                                    Total: {formatCurrency(dayTotal)}
+                                </Text>
+                            </View>
                         </View>
                     )}
                     renderItem={({ item }: { item: DailyExpense }) => {
@@ -200,14 +205,19 @@ export function DailyExpensesScreen() {
                         ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
                         
                         return (
-                            <ExpenseCard
-                                title={item.description}
-                                amount={item.amount}
-                                categoryLabel={catInfo?.label || item.category || 'Otros'}
-                                categoryIcon={catInfo?.icon || 'MoreHorizontal'}
-                                colorKey={catInfo?.colorKey || 'other'}
-                                onActionPress={() => handleActionPress(item)}
-                            />
+                            <View style={[
+                                styles.gridItem,
+                                { width: isLargeScreen ? (width > 1200 ? '16.6%' : width > 800 ? '33.3%' : '50%') : '100%' }
+                            ]}>
+                                <ExpenseCard
+                                    title={item.description}
+                                    amount={item.amount}
+                                    categoryLabel={catInfo?.label || item.category || 'Otros'}
+                                    categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                    colorKey={catInfo?.colorKey || 'other'}
+                                    onActionPress={() => handleActionPress(item)}
+                                />
+                            </View>
                         );
                     }}
                 />
@@ -389,28 +399,41 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     listContent: {
-        padding: Spacing.lg,
+        padding: Spacing.sm,
         paddingTop: 0,
         paddingBottom: 100, // Clearance for tab bar
+        flexDirection: 'row',
+        flexWrap: 'wrap',
     },
     sectionHeaderContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: Spacing.md,
+        marginTop: Spacing.lg,
         marginBottom: Spacing.sm,
+    },
+    sectionHeaderTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    headerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: Colors.neutral[700],
+        opacity: 0.5,
     },
     sectionHeader: {
         fontFamily: Typography.family.semiBold,
         fontSize: Typography.size.tiny,
         color: Colors.text.secondary,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 1,
     },
     sectionHeaderTotal: {
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.tiny,
-        color: Colors.text.primary,
+        color: Colors.brand.primary,
+    },
+    gridItem: {
+        paddingHorizontal: 4,
     },
     expenseCard: {
         padding: Spacing.md,

@@ -45,6 +45,10 @@ export function FixedExpensesScreen() {
     const { user } = useAuth();
     const { width } = useWindowDimensions();
     const isLargeScreen = width > 850;
+    
+    // Dynamic columns for grid (max 6)
+    const numColumns = Math.min(6, Math.max(1, Math.floor((width - Spacing.lg * 2) / 250)));
+    
     const [expenses, setExpenses] = useState<FixedExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -207,7 +211,10 @@ export function FixedExpensesScreen() {
                 </View>
             ) : (
                 <FlatList
+                    key={`fixed-expenses-grid-${numColumns}`}
                     data={expenses}
+                    numColumns={numColumns}
+                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
                     keyExtractor={(item: FixedExpense) => item.id}
                     scrollEnabled={isLargeScreen}
                     style={isLargeScreen ? { flex: 1 } : null}
@@ -480,6 +487,10 @@ const styles = StyleSheet.create({
     },
     responsiveContent: {
         paddingHorizontal: 0,
+        maxWidth: 1400,
+    },
+    columnWrapper: {
+        gap: Spacing.md,
     },
     title: {
         fontFamily: Typography.family.bold,
