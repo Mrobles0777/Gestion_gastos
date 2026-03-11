@@ -1,0 +1,7 @@
+project_id = "gbpqryqbheufxrxgfnhs"
+
+[functions.budget-alert]
+verify_jwt = false
+
+[functions.payment-reminder]
+verify_jwt = false
