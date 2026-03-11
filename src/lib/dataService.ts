@@ -9,12 +9,15 @@
 import { supabase } from './supabase';
 import { getCurrentMonthKey } from './dateHelpers';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import type {
     Profile,
     FixedExpense,
     DailyExpense,
     DashboardData,
 } from '../types';
+
+const isWeb = Platform.OS === 'web';
 
 const CACHE_KEYS = {
     PROFILE: (userId: string) => `cache_profile_${userId}`,
@@ -39,7 +42,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = DEFAULT_T
 export async function getProfile(userId: string, useCacheFirst = false): Promise<Profile | null> {
     const cacheKey = CACHE_KEYS.PROFILE(userId);
 
-    if (useCacheFirst) {
+    if (useCacheFirst && !isWeb) {
         try {
             const cached = await SecureStore.getItemAsync(cacheKey);
             if (cached) return JSON.parse(cached);
@@ -61,12 +64,12 @@ export async function getProfile(userId: string, useCacheFirst = false): Promise
             throw new Error(`getProfile: ${error.message}`);
         }
 
-        if (data) {
+        if (data && !isWeb) {
             await SecureStore.setItemAsync(cacheKey, JSON.stringify(data));
         }
         return data;
     } catch (err: any) {
-        if (err.message === 'TIMEOUT') {
+        if (err.message === 'TIMEOUT' && !isWeb) {
             const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
@@ -99,7 +102,7 @@ export async function getFixedExpenses(
 ): Promise<FixedExpense[]> {
     const cacheKey = CACHE_KEYS.FIXED_EXPENSES(userId, monthFirstDay);
 
-    if (useCacheFirst) {
+    if (useCacheFirst && !isWeb) {
         try {
             const cached = await SecureStore.getItemAsync(cacheKey);
             if (cached) return JSON.parse(cached);
@@ -121,10 +124,12 @@ export async function getFixedExpenses(
         if (error) throw new Error(`getFixedExpenses: ${error.message}`);
         
         const result = data ?? [];
-        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        if (!isWeb) {
+            await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        }
         return result;
     } catch (err: any) {
-        if (err.message === 'TIMEOUT') {
+        if (err.message === 'TIMEOUT' && !isWeb) {
             const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
@@ -183,7 +188,7 @@ export async function getDailyExpenses(
 ): Promise<DailyExpense[]> {
     const cacheKey = CACHE_KEYS.DAILY_EXPENSES(userId, startDate, endDate);
 
-    if (useCacheFirst) {
+    if (useCacheFirst && !isWeb) {
         try {
             const cached = await SecureStore.getItemAsync(cacheKey);
             if (cached) return JSON.parse(cached);
@@ -206,10 +211,12 @@ export async function getDailyExpenses(
         if (error) throw new Error(`getDailyExpenses: ${error.message}`);
         
         const result = data ?? [];
-        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        if (!isWeb) {
+            await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        }
         return result;
     } catch (err: any) {
-        if (err.message === 'TIMEOUT') {
+        if (err.message === 'TIMEOUT' && !isWeb) {
             const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
@@ -256,7 +263,7 @@ export async function getDashboardData(userId: string, useCacheFirst = false): P
     const cacheKey = CACHE_KEYS.DASHBOARD(userId);
     const month = getCurrentMonthKey();
 
-    if (useCacheFirst) {
+    if (useCacheFirst && !isWeb) {
         try {
             const cached = await SecureStore.getItemAsync(cacheKey);
             if (cached) return JSON.parse(cached);
@@ -293,10 +300,12 @@ export async function getDashboardData(userId: string, useCacheFirst = false): P
             alertThreshold,
             pendingPayments
         };
-        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        if (!isWeb) {
+            await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        }
         return result;
     } catch (err: any) {
-        if (err.message === 'TIMEOUT') {
+        if (err.message === 'TIMEOUT' && !isWeb) {
             const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
@@ -356,6 +365,8 @@ export async function clearUserCache(userId: string): Promise<void> {
         CACHE_KEYS.FIXED_EXPENSES(userId, month.firstDay),
         CACHE_KEYS.DAILY_EXPENSES(userId, month.firstDay, month.lastDay),
     ];
+
+    if (isWeb) return;
 
     for (const key of keys) {
         try {
