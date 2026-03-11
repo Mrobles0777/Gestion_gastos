@@ -61,7 +61,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS fixed_expenses (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   category   TEXT NOT NULL CHECK (category IN ('arriendo','luz','agua','internet','otros')),
   label      TEXT,
   amount     NUMERIC NOT NULL CHECK (amount > 0),
@@ -126,3 +126,9 @@ END $$;
 -- ────────────────────── AUTOMATION (CRON) ───────────────────
 -- Nota: Para activar remmplazar [TU-PROYECTO] y [TU-SERVICE-ROLE-KEY] 
 -- en el comando cron.schedule al final del despliegue.
+
+-- FIX: Asegurar relación con profiles para Joins en Edge Functions
+ALTER TABLE fixed_expenses 
+DROP CONSTRAINT IF EXISTS fixed_expenses_user_id_fkey,
+ADD CONSTRAINT fixed_expenses_user_id_fkey 
+FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;

@@ -16,9 +16,16 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
-
-  try {
+    try {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    if (!RESEND_API_KEY) {
+      console.error('Error: RESEND_API_KEY no está configurada.');
+      return new Response(JSON.stringify({ error: 'Mail service not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // 1. Obtener el día actual de Santiago, Chile
     const now = new Date();
@@ -35,11 +42,12 @@ serve(async (req) => {
     console.log(`--- Iniciando Recordatorios de Pago (Día: ${currentDay}, Mes: ${monthKey}) ---`);
 
     // 2. Consultar gastos vencidos hoy que no estén pagados
+    // NOTA: Requiere que fixed_expenses tenga FK hacia profiles para el join
     const { data: expenses, error: expensesError } = await supabaseAdmin
       .from('fixed_expenses')
       .select(`
         *,
-        profiles:user_id (
+        profiles!inner (
           email,
           alert_email,
           full_name
@@ -49,7 +57,10 @@ serve(async (req) => {
       .eq('is_paid', false)
       .eq('month', monthKey);
 
-    if (expensesError) throw expensesError;
+    if (expensesError) {
+      console.error('Error consultando base de datos:', expensesError);
+      throw expensesError;
+    }
 
     if (!expenses || expenses.length === 0) {
       console.log('No hay pagos pendientes para hoy.');
@@ -115,28 +126,33 @@ serve(async (req) => {
         </div>
       `;
 
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [group.email],
-          subject: `📅 Recordatorio de Pago: Vence hoy (${currentDay})`,
-          html: emailHtml,
-        }),
-      });
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: FROM_EMAIL,
+            to: [group.email],
+            subject: `📅 Recordatorio de Pago: Vence hoy (${currentDay})`,
+            html: emailHtml,
+          }),
+        });
 
-      results.push({ email: group.email, status: res.status });
+        results.push({ email: group.email, status: res.status });
+      } catch (err: any) {
+        console.error(`Fallo al enviar correo a ${group.email}:`, err);
+        results.push({ email: group.email, status: 'error', message: err.message });
+      }
     }
 
     return new Response(JSON.stringify({ success: true, processed: results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('Error en Recordatorios de Pago:', error);
+    console.error('Error crítico en Recordatorios de Pago:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
