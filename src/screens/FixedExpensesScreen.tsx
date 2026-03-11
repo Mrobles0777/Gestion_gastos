@@ -24,12 +24,14 @@ import {
     Droplets,
     Wifi,
     MoreHorizontal,
+    Pencil,
 } from 'lucide-react-native';
 import { Card, Button, Input } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import {
     getFixedExpenses,
     addFixedExpense,
+    updateFixedExpense,
     deleteFixedExpense,
 } from '../lib/dataService';
 import { checkAndTriggerBudgetAlert } from '../lib/dataService';
@@ -50,7 +52,8 @@ export function FixedExpensesScreen() {
     const { user } = useAuth();
     const [expenses, setExpenses] = useState<FixedExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null);
 
     const month = getCurrentMonthKey();
 
@@ -118,7 +121,26 @@ export function FixedExpensesScreen() {
                 due_day: dueDay,
             });
             setExpenses((prev) => [newExpense, ...prev]);
-            setShowModal(false);
+            setShowAddModal(false);
+
+            // Check budget alert
+            await checkAndTriggerBudgetAlert(user.id, user.email ?? '');
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+        }
+    }
+
+    async function handleEdit(id: string, category: FixedExpenseCategory, amount: number, label: string, dueDay: number) {
+        if (!user) return;
+        try {
+            const updated = await updateFixedExpense(id, {
+                category,
+                amount,
+                label: label || null,
+                due_day: dueDay,
+            });
+            setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
+            setEditingExpense(null);
 
             // Check budget alert
             await checkAndTriggerBudgetAlert(user.id, user.email ?? '');
@@ -149,7 +171,7 @@ export function FixedExpensesScreen() {
                 </View>
                 <TouchableOpacity
                     style={styles.addButton}
-                    onPress={() => setShowModal(true)}
+                    onPress={() => setShowAddModal(true)}
                 >
                     <Plus color={Colors.neutral.white} size={24} />
                 </TouchableOpacity>
@@ -163,7 +185,7 @@ export function FixedExpensesScreen() {
                     </Text>
                     <Button
                         title="Agregar gasto fijo"
-                        onPress={() => setShowModal(true)}
+                        onPress={() => setShowAddModal(true)}
                         style={{ marginTop: Spacing.md }}
                     />
                 </View>
@@ -195,12 +217,20 @@ export function FixedExpensesScreen() {
                                     <Text style={styles.expenseAmount}>
                                         {formatCurrency(item.amount)}
                                     </Text>
-                                    <TouchableOpacity
-                                        onPress={() => handleDelete(item.id)}
-                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                    >
-                                        <Trash2 color={Colors.status.danger} size={18} />
-                                    </TouchableOpacity>
+                                    <View style={styles.actionButtons}>
+                                        <TouchableOpacity
+                                            onPress={() => setEditingExpense(item)}
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <Pencil color={Colors.brand.primary} size={18} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => handleDelete(item.id)}
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <Trash2 color={Colors.status.danger} size={18} />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </Card>
                         );
@@ -210,15 +240,25 @@ export function FixedExpensesScreen() {
 
             {/* Add Modal */}
             <AddFixedExpenseModal
-                visible={showModal}
-                onClose={() => setShowModal(false)}
+                visible={showAddModal}
+                onClose={() => setShowAddModal(false)}
                 onAdd={handleAdd}
             />
+
+            {/* Edit Modal */}
+            {editingExpense && (
+                <EditFixedExpenseModal
+                    visible={!!editingExpense}
+                    expense={editingExpense}
+                    onClose={() => setEditingExpense(null)}
+                    onEdit={handleEdit}
+                />
+            )}
         </View>
     );
 }
 
-/* ─── Add Modal ─── */
+/* ─── Add/Edit Modals ─── */
 
 function AddFixedExpenseModal({
     visible,
@@ -323,6 +363,108 @@ function AddFixedExpenseModal({
     );
 }
 
+function EditFixedExpenseModal({
+    visible,
+    expense,
+    onClose,
+    onEdit,
+}: {
+    visible: boolean;
+    expense: FixedExpense;
+    onClose: () => void;
+    onEdit: (id: string, category: FixedExpenseCategory, amount: number, label: string, dueDay: number) => void;
+}) {
+    const [category, setCategory] = useState<FixedExpenseCategory>(expense.category);
+    const [amount, setAmount] = useState(expense.amount.toString());
+    const [label, setLabel] = useState(expense.label || '');
+    const [dueDay, setDueDay] = useState((expense.due_day || 1).toString());
+
+    function handleSubmit() {
+        const numAmount = parseInt(amount.replace(/\D/g, ''), 10);
+        if (!numAmount || numAmount <= 0) {
+            Alert.alert('Error', 'Ingresa un monto válido.');
+            return;
+        }
+        const numDueDay = parseInt(dueDay, 10);
+        if (!numDueDay || numDueDay < 1 || numDueDay > 31) {
+            Alert.alert('Error', 'Ingresa un día de pago válido (1-31).');
+            return;
+        }
+        onEdit(expense.id, category, numAmount, label.trim(), numDueDay);
+    }
+
+    return (
+        <Modal visible={visible} animationType="slide" transparent>
+            <View style={modalStyles.backdrop}>
+                <View style={modalStyles.sheet}>
+                    <Text style={modalStyles.title}>Editar gasto fijo</Text>
+
+                    {/* Category selector */}
+                    <Text style={modalStyles.label}>Categoría</Text>
+                    <View style={modalStyles.catRow}>
+                        {FIXED_EXPENSE_CATEGORIES.map((cat) => (
+                            <TouchableOpacity
+                                key={cat.value}
+                                style={[
+                                    modalStyles.catChip,
+                                    category === cat.value && modalStyles.catChipActive,
+                                ]}
+                                onPress={() => setCategory(cat.value)}
+                            >
+                                <Text
+                                    style={[
+                                        modalStyles.catChipText,
+                                        category === cat.value && modalStyles.catChipTextActive,
+                                    ]}
+                                >
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <Input
+                        label="Monto (CLP)"
+                        placeholder="Ej: 500.000"
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="numeric"
+                    />
+
+                    <Input
+                        label="Etiqueta (opcional)"
+                        placeholder="Ej: Dto. calle Ejemplo"
+                        value={label}
+                        onChangeText={setLabel}
+                    />
+
+                    <Input
+                        label="Día de pago (1-31)"
+                        placeholder="Ej: 5"
+                        value={dueDay}
+                        onChangeText={setDueDay}
+                        keyboardType="numeric"
+                    />
+
+                    <View style={modalStyles.actions}>
+                        <Button
+                            title="Cancelar"
+                            onPress={onClose}
+                            variant="ghost"
+                            style={{ flex: 1 }}
+                        />
+                        <Button
+                            title="Guardar"
+                            onPress={handleSubmit}
+                            style={{ flex: 1 }}
+                        />
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}
+
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
@@ -412,6 +554,11 @@ const styles = StyleSheet.create({
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.body,
         color: Colors.text.primary,
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+        alignItems: 'center',
     },
 });
 
