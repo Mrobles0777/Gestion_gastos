@@ -1,9 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY_BUDGET') ?? Deno.env.get('RESEND_API_KEY') ?? '';
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const FROM_EMAIL = 'onboarding@resend.dev';
 
 const corsHeaders = {
@@ -29,30 +26,19 @@ serve(async (req) => {
 
   try {
     const payload: AlertPayload = await req.json();
-    const { user_id, email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
+    const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
 
-    console.log(`[BudgetAlert] Procesando alerta premium para ${email}. Consumo: ${pct}%`);
+    console.log(`[BudgetAlert] Procesando alerta simplificada para ${email}. Consumo: ${pct}%`);
 
     if (!RESEND_API_KEY) {
       throw new Error('Mail service not configured (Budget)');
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // 1. Obtener detalles de gastos para el correo
-    const [fixedRes, dailyRes] = await Promise.all([
-      supabaseAdmin.from('fixed_expenses').select('label, category, amount').eq('user_id', user_id).eq('month', monthKey).order('amount', { ascending: false }).limit(5),
-      supabaseAdmin.from('daily_expenses').select('description, category, amount').eq('user_id', user_id).gte('date', monthKey).lte('date', monthKey.replace('-01', '-31')).order('amount', { ascending: false }).limit(5)
-    ]);
-
-    const topFixed = fixedRes.data || [];
-    const topDaily = dailyRes.data || [];
-
     // Cálculo de color para la barra de progreso
     const progressColor = pct >= 90 ? '#ef4444' : pct >= 75 ? '#f97316' : '#3b82f6';
     const now = new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' });
 
-    // HTML Premium
+    // HTML Premium Simplificado
     const html = `
       <!DOCTYPE html>
       <html>
@@ -70,15 +56,14 @@ serve(async (req) => {
           .progress-container { background: #f1f5f9; height: 12px; border-radius: 6px; margin: 24px 0; overflow: hidden; }
           .progress-bar { height: 100%; border-radius: 6px; width: ${Math.min(pct, 100)}%; background-color: ${progressColor}; transition: width 0.5s ease; }
           
-          .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
-          .stat-card { background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
-          .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-          .stat-value { font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+          .summary-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 16px; overflow: hidden; }
+          .summary-item { display: flex; justify-content: space-between; padding: 16px; border-bottom: 1px solid #e2e8f0; }
+          .summary-item:last-child { border-bottom: none; }
+          .label { font-size: 14px; color: #64748b; font-weight: 600; }
+          .value { font-size: 16px; font-weight: 700; color: #0f172a; }
           
-          .section-title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 24px 0 12px 0; display: flex; align-items: center; }
-          .expense-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-          .expense-name { color: #334155; }
-          .expense-amount { font-weight: 600; color: #0f172a; }
+          .highlight-item { background: #fff7ed; border: 1px solid #ffedd5; padding: 16px; border-radius: 12px; text-align: center; margin-top: 24px; }
+          .highlight-text { color: #9a3412; font-size: 14px; font-weight: 600; margin: 0; }
           
           .footer { padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; background: #f8fafc; }
         </style>
@@ -93,52 +78,40 @@ serve(async (req) => {
           
           <div class="content">
             <p style="margin-top: 0;">Hola,</p>
-            <p>Tu consumo ha superado el límite configurado. Aquí tienes el estado actual de tus finanzas para el mes de ${monthKey}:</p>
+            <p>Tu consumo ha superado el límite configurado. Aquí tienes el desglose total para el mes de ${monthKey}:</p>
             
             <div class="progress-container">
               <div class="progress-bar"></div>
             </div>
             
-            <div class="stats-grid" style="display: table; width: 100%;">
-              <div style="display: table-cell; width: 50%; padding-right: 8px;">
-                <div class="stat-card">
-                  <div class="stat-label">Sueldo</div>
-                  <div class="stat-value">$${salary.toLocaleString('es-CL')}</div>
-                </div>
+            <div class="summary-card">
+              <div class="summary-item">
+                <span class="label">Sueldo Mensual</span>
+                <span class="value">$${salary.toLocaleString('es-CL')}</span>
               </div>
-              <div style="display: table-cell; width: 50%; padding-left: 8px;">
-                <div class="stat-card">
-                  <div class="stat-label">Gastado</div>
-                  <div class="stat-value" style="color: ${progressColor};">$${totalSpent.toLocaleString('es-CL')}</div>
-                </div>
+              <div class="summary-item">
+                <span class="label">Total Gastos Fijos</span>
+                <span class="value">$${totalFixed.toLocaleString('es-CL')}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Total Gastos Diarios</span>
+                <span class="value">$${totalDaily.toLocaleString('es-CL')}</span>
+              </div>
+              <div class="summary-item" style="background: #f1f5f9;">
+                <span class="label" style="color: #1e293b;">GASTADO TOTAL</span>
+                <span class="value" style="color: ${progressColor}; font-size: 18px;">$${totalSpent.toLocaleString('es-CL')}</span>
               </div>
             </div>
 
-            <div class="section-title">📉 Gastos Fijos Principales</div>
-            ${topFixed.length > 0 ? topFixed.map(e => `
-              <div class="expense-item">
-                <span class="expense-name">${e.label || e.category}</span>
-                <span class="expense-amount">$${e.amount.toLocaleString('es-CL')}</span>
-              </div>
-            `).join('') : '<p style="font-size: 13px; color: #94a3b8;">No hay gastos registrados.</p>'}
-
-            <div class="section-title">🛍️ Gastos Diarios Principales</div>
-            ${topDaily.length > 0 ? topDaily.map(e => `
-              <div class="expense-item">
-                <span class="expense-name">${e.description || e.category}</span>
-                <span class="expense-amount">$${e.amount.toLocaleString('es-CL')}</span>
-              </div>
-            `).join('') : '<p style="font-size: 13px; color: #94a3b8;">No hay gastos registrados.</p>'}
-
-            <div style="margin-top: 32px; padding: 16px; background: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5; text-align: center;">
-              <p style="margin: 0; color: #9a3412; font-size: 14px; font-weight: 500;">
-                Quedan <strong>$${(salary - totalSpent).toLocaleString('es-CL')}</strong> disponibles para el resto del mes.
+            <div class="highlight-item">
+              <p class="highlight-text">
+                Dinero disponible: <strong>$${(salary - totalSpent).toLocaleString('es-CL')}</strong>
               </p>
             </div>
           </div>
           
           <div class="footer">
-            Reporte inteligente de Gestión Gastos • ${now}
+            Gestión Gastos • ${now}
           </div>
         </div>
       </body>
