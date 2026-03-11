@@ -22,6 +22,8 @@ export interface FixedExpense {
     label: string | null;
     amount: number;
     month: string; // 'YYYY-MM-DD' first day of month
+    due_day?: number;
+    is_paid?: boolean;
     created_at: string;
 }
 

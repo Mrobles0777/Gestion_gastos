@@ -77,7 +77,7 @@ export async function addFixedExpense(
 
 export async function updateFixedExpense(
     id: string,
-    updates: Partial<Pick<FixedExpense, 'category' | 'label' | 'amount'>>,
+    updates: Partial<Pick<FixedExpense, 'category' | 'label' | 'amount' | 'due_day' | 'is_paid'>>,
 ): Promise<FixedExpense> {
     const { data, error } = await supabase
         .from('fixed_expenses')
@@ -93,6 +93,14 @@ export async function updateFixedExpense(
 export async function deleteFixedExpense(id: string): Promise<void> {
     const { error } = await supabase.from('fixed_expenses').delete().eq('id', id);
     if (error) throw new Error(`deleteFixedExpense: ${error.message}`);
+}
+
+export async function toggleFixedExpensePaid(id: string, isPaid: boolean): Promise<void> {
+    const { error } = await supabase
+        .from('fixed_expenses')
+        .update({ is_paid: isPaid })
+        .eq('id', id);
+    if (error) throw new Error(`toggleFixedExpensePaid: ${error.message}`);
 }
 
 // ────────────────────── Daily Expenses ───────────────────────

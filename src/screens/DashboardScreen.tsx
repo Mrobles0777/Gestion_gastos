@@ -27,7 +27,7 @@ import {
 import { Card, ProgressBar, Button } from '../components/common';
 import { BudgetImpactCard } from '../components/dashboard/BudgetImpactCard';
 import { useAuth } from '../contexts/AuthContext';
-import { getDashboardData, getProfile } from '../lib/dataService';
+import { getDashboardData, getProfile, getFixedExpenses } from '../lib/dataService';
 import { formatCurrency, getCurrentMonthKey } from '../lib/dateHelpers';
 import { Colors, Spacing, Typography, Radius, Shadows } from '../theme/tokens';
 import type { DashboardData } from '../types';
@@ -35,6 +35,7 @@ import type { DashboardData } from '../types';
 export function DashboardScreen() {
     const { user, signOut } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
+    const [pendingPayments, setPendingPayments] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -43,8 +44,13 @@ export function DashboardScreen() {
     const loadData = useCallback(async () => {
         if (!user) return;
         try {
-            const dashboard = await getDashboardData(user.id);
+            const [dashboard, fixedExpenses] = await Promise.all([
+                getDashboardData(user.id),
+                getFixedExpenses(user.id, monthKey.firstDay)
+            ]);
             setData(dashboard);
+            const pending = fixedExpenses.filter(e => !e.is_paid).length;
+            setPendingPayments(pending);
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
@@ -134,6 +140,17 @@ export function DashboardScreen() {
                     percent={data.percentConsumed}
                     threshold={data.alertThreshold}
                 />
+                
+                {pendingPayments > 0 && (
+                    <Card style={styles.pendingCard}>
+                        <View style={styles.pendingRow}>
+                            <Calendar color={Colors.status.danger} size={20} />
+                            <Text style={styles.pendingText}>
+                                Tienes {pendingPayments} pago{pendingPayments > 1 ? 's' : ''} pendiente{pendingPayments > 1 ? 's' : ''} este mes.
+                            </Text>
+                        </View>
+                    </Card>
+                )}
 
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
@@ -283,5 +300,23 @@ const styles = StyleSheet.create({
     statValue: {
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.h3,
+    },
+    pendingCard: {
+        backgroundColor: Colors.status.danger + '10', // 10% opacity
+        borderColor: Colors.status.danger + '40',
+        borderWidth: 1,
+        marginBottom: Spacing.md,
+        padding: Spacing.md,
+    },
+    pendingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    pendingText: {
+        fontFamily: Typography.family.medium,
+        fontSize: Typography.size.small,
+        color: Colors.status.danger,
+        flex: 1,
     },
 });

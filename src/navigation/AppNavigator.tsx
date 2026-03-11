@@ -13,6 +13,7 @@ import {
     Landmark,
     ShoppingBag,
     User,
+    Calendar,
 } from 'lucide-react-native';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -22,6 +23,7 @@ import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { FixedExpensesScreen } from '../screens/FixedExpensesScreen';
 import { DailyExpensesScreen } from '../screens/DailyExpensesScreen';
+import { CalendarScreen } from '../screens/CalendarScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { Colors, Typography } from '../theme/tokens';
 
@@ -75,6 +77,16 @@ function MainTabs() {
                     tabBarLabel: 'Diarios',
                     tabBarIcon: ({ color, size }) => (
                         <ShoppingBag color={color} size={size} />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Calendar"
+                component={CalendarScreen}
+                options={{
+                    tabBarLabel: 'Calendario',
+                    tabBarIcon: ({ color, size }) => (
+                        <Calendar color={color} size={size} />
                     ),
                 }}
             />

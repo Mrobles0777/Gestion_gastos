@@ -110,6 +110,7 @@ export function FixedExpensesScreen() {
                 label: label || null,
                 amount,
                 month: month.firstDay,
+                due_day: dueDay,
             });
             setExpenses((prev) => [newExpense, ...prev]);
             setShowModal(false);
@@ -221,11 +222,12 @@ function AddFixedExpenseModal({
 }: {
     visible: boolean;
     onClose: () => void;
-    onAdd: (category: FixedExpenseCategory, amount: number, label: string) => void;
+    onAdd: (category: FixedExpenseCategory, amount: number, label: string, dueDay: number) => void;
 }) {
     const [category, setCategory] = useState<FixedExpenseCategory>('arriendo');
     const [amount, setAmount] = useState('');
     const [label, setLabel] = useState('');
+    const [dueDay, setDueDay] = useState('1');
 
     function handleSubmit() {
         const numAmount = parseInt(amount.replace(/\D/g, ''), 10);
@@ -233,9 +235,15 @@ function AddFixedExpenseModal({
             Alert.alert('Error', 'Ingresa un monto válido.');
             return;
         }
-        onAdd(category, numAmount, label.trim());
+        const numDueDay = parseInt(dueDay, 10);
+        if (!numDueDay || numDueDay < 1 || numDueDay > 31) {
+            Alert.alert('Error', 'Ingresa un día de pago válido (1-31).');
+            return;
+        }
+        onAdd(category, numAmount, label.trim(), numDueDay);
         setAmount('');
         setLabel('');
+        setDueDay('1');
     }
 
     return (
@@ -281,6 +289,14 @@ function AddFixedExpenseModal({
                         placeholder="Ej: Dto. calle Ejemplo"
                         value={label}
                         onChangeText={setLabel}
+                    />
+
+                    <Input
+                        label="Día de pago (1-31)"
+                        placeholder="Ej: 5"
+                        value={dueDay}
+                        onChangeText={setDueDay}
+                        keyboardType="numeric"
                     />
 
                     <View style={modalStyles.actions}>
