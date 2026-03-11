@@ -16,6 +16,16 @@ export const Colors = {
         danger: '#ef4444',
         info: '#3b82f6',
     },
+    categories: {
+        food: '#f59e0b',    // Orange
+        transport: '#3b82f6', // Blue
+        shopping: '#a855f7',  // Violet
+        housing: '#6366f1',   // Indigo
+        utilities: '#06b6d4', // Cyan
+        health: '#10b981',    // Emerald
+        entertainment: '#ec4899', // Pink
+        other: '#64748b',     // Slate
+    },
     neutral: {
         900: '#f8fafc', // Light background
         800: '#f1f5f9',

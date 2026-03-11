@@ -19,6 +19,8 @@ import { Colors, Spacing, Typography, Radius, Shadows } from '../../theme/tokens
 import { formatCurrency } from '../../lib/dateHelpers';
 import { triggerPaymentReminder } from '../../lib/dataService';
 import type { FixedExpense } from '../../types';
+import { FIXED_EXPENSE_CATEGORIES } from '../../types';
+import { ExpenseCard } from '../expenses';
 
 interface PaymentReminderModalProps {
     visible: boolean;
@@ -71,18 +73,21 @@ export function PaymentReminderModal({ visible, onClose, expenses }: PaymentRemi
 
                     <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
                         <View style={styles.expensesContainer}>
-                            {expenses.map((expense) => (
-                                <View key={expense.id} style={styles.expenseCard}>
-                                    <View style={styles.expenseInfo}>
-                                        <Text style={styles.expenseLabel}>{expense.label || expense.category}</Text>
-                                        <View style={styles.dueTag}>
-                                            <Calendar size={12} color={Colors.brand.primary} />
-                                            <Text style={styles.dueText}>Vence hoy</Text>
-                                        </View>
-                                    </View>
-                                    <Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text>
-                                </View>
-                            ))}
+                            {expenses.map((expense) => {
+                                const catInfo = FIXED_EXPENSE_CATEGORIES.find(c => c.value === expense.category);
+                                return (
+                                    <ExpenseCard
+                                        key={expense.id}
+                                        title={expense.label || catInfo?.label || expense.category}
+                                        amount={expense.amount}
+                                        categoryLabel={catInfo?.label || expense.category}
+                                        categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                        colorKey={catInfo?.colorKey || 'other'}
+                                        subtitle="Vence hoy"
+                                        isPaid={expense.is_paid}
+                                    />
+                                );
+                            })}
                         </View>
                     </ScrollView>
 

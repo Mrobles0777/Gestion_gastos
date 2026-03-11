@@ -19,10 +19,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import {
     Plus,
+    MoreVertical,
     Trash2,
-    ShoppingCart,
 } from 'lucide-react-native';
 import { Card, Button, Input, ResponsiveScreen } from '../components/common';
+import { ExpenseCard } from '../components/expenses';
 import { useAuth } from '../contexts/AuthContext';
 import {
     getDailyExpenses,
@@ -32,7 +33,8 @@ import {
 } from '../lib/dataService';
 import { getCurrentMonthKey, formatCurrency, formatDate, todayString } from '../lib/dateHelpers';
 import { Colors, Spacing, Typography, Radius } from '../theme/tokens';
-import type { DailyExpense } from '../types';
+import type { DailyExpense, DailyExpenseCategory } from '../types';
+import { DAILY_EXPENSE_CATEGORIES } from '../types';
 
 export function DailyExpensesScreen() {
     const { user } = useAuth();
@@ -116,6 +118,22 @@ export function DailyExpensesScreen() {
         }
     }
 
+    const handleActionPress = (item: DailyExpense) => {
+        Alert.alert(
+            item.description,
+            'Selecciona una acción:',
+            [
+                { 
+                    text: 'Eliminar', 
+                    onPress: () => handleDelete(item.id),
+                    style: 'destructive' 
+                },
+                { text: 'Cancelar', style: 'cancel' },
+            ],
+            { cancelable: true }
+        );
+    };
+
     const total = expenses.reduce((sum: number, e: DailyExpense) => sum + e.amount, 0);
 
     // Group by date for SectionList
@@ -173,34 +191,22 @@ export function DailyExpensesScreen() {
                     renderSectionHeader={({ section: { title } }: { section: { title: string } }) => (
                         <Text style={styles.sectionHeader}>{title}</Text>
                     )}
-                    renderItem={({ item }: { item: DailyExpense }) => (
-                        <Card style={styles.expenseCard}>
-                            <View style={styles.expenseRow}>
-                                <View style={styles.iconContainer}>
-                                    <ShoppingCart color={Colors.text.secondary} size={18} />
-                                </View>
-                                <View style={styles.expenseInfo}>
-                                    <Text style={styles.expenseDesc} numberOfLines={1}>
-                                        {item.description}
-                                    </Text>
-                                    {item.category && (
-                                        <Text style={styles.expenseCat} numberOfLines={1}>
-                                            {item.category}
-                                        </Text>
-                                    )}
-                                </View>
-                                <Text style={styles.expenseAmount}>
-                                    {formatCurrency(item.amount)}
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={() => handleDelete(item.id)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Trash2 color={Colors.status.danger} size={18} />
-                                </TouchableOpacity>
-                            </View>
-                        </Card>
-                    )}
+                    renderItem={({ item }: { item: DailyExpense }) => {
+                        const catInfo = DAILY_EXPENSE_CATEGORIES.find(
+                            (c) => c.value === item.category,
+                        ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
+                        
+                        return (
+                            <ExpenseCard
+                                title={item.description}
+                                amount={item.amount}
+                                categoryLabel={catInfo?.label || item.category || 'Otros'}
+                                categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                colorKey={catInfo?.colorKey || 'other'}
+                                onActionPress={() => handleActionPress(item)}
+                            />
+                        );
+                    }}
                 />
             )}
 
@@ -244,7 +250,7 @@ function AddDailyExpenseModal({
 }) {
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
+    const [category, setCategory] = useState<DailyExpenseCategory>('otros');
 
     function handleSubmit() {
         if (!description.trim()) {
@@ -256,10 +262,10 @@ function AddDailyExpenseModal({
             Alert.alert('Error', 'Ingresa un monto válido.');
             return;
         }
-        onAdd(description.trim(), numAmount, category.trim());
+        onAdd(description.trim(), numAmount, category);
         setDescription('');
         setAmount('');
-        setCategory('');
+        setCategory('otros');
     }
 
     return (
@@ -283,12 +289,28 @@ function AddDailyExpenseModal({
                         keyboardType="numeric"
                     />
 
-                    <Input
-                        label="Categoría (opcional)"
-                        placeholder="Ej: Comida, Transporte"
-                        value={category}
-                        onChangeText={setCategory}
-                    />
+                    <Text style={modalStyles.label}>Categoría</Text>
+                    <View style={modalStyles.catRow}>
+                        {DAILY_EXPENSE_CATEGORIES.map((cat) => (
+                            <TouchableOpacity
+                                key={cat.value}
+                                style={[
+                                    modalStyles.catChip,
+                                    category === cat.value && modalStyles.catChipActive,
+                                ]}
+                                onPress={() => setCategory(cat.value)}
+                            >
+                                <Text
+                                    style={[
+                                        modalStyles.catChipText,
+                                        category === cat.value && modalStyles.catChipTextActive,
+                                    ]}
+                                >
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
                     <View style={modalStyles.actions}>
                         <Button
@@ -432,6 +454,38 @@ const modalStyles = StyleSheet.create({
         color: Colors.text.primary,
         marginBottom: Spacing.lg,
         textAlign: 'center',
+    },
+    label: {
+        fontFamily: Typography.family.medium,
+        fontSize: Typography.size.small,
+        color: Colors.text.secondary,
+        marginBottom: Spacing.sm,
+    },
+    catRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: Spacing.sm,
+        marginBottom: Spacing.lg,
+    },
+    catChip: {
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: Radius.full,
+        backgroundColor: Colors.background.cardHighlight,
+        borderWidth: 1,
+        borderColor: Colors.neutral[700],
+    },
+    catChipActive: {
+        backgroundColor: Colors.brand.primary,
+        borderColor: Colors.brand.primary,
+    },
+    catChipText: {
+        fontFamily: Typography.family.medium,
+        fontSize: Typography.size.small,
+        color: Colors.text.secondary,
+    },
+    catChipTextActive: {
+        color: Colors.neutral.white,
     },
     actions: {
         flexDirection: 'row',

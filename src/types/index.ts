@@ -48,12 +48,35 @@ export const FIXED_EXPENSE_CATEGORIES: {
     value: FixedExpenseCategory;
     label: string;
     icon: string;
+    colorKey: string;
 }[] = [
-        { value: 'arriendo', label: 'Arriendo', icon: 'Home' },
-        { value: 'luz', label: 'Luz', icon: 'Zap' },
-        { value: 'agua', label: 'Agua', icon: 'Droplets' },
-        { value: 'internet', label: 'Internet', icon: 'Wifi' },
-        { value: 'otros', label: 'Otros', icon: 'MoreHorizontal' },
+        { value: 'arriendo', label: 'Arriendo', icon: 'Home', colorKey: 'housing' },
+        { value: 'luz', label: 'Luz', icon: 'Zap', colorKey: 'food' }, // Luz is energy, using food color (orange) as requested for "patrones"
+        { value: 'agua', label: 'Agua', icon: 'Droplets', colorKey: 'utilities' },
+        { value: 'internet', label: 'Internet', icon: 'Wifi', colorKey: 'transport' },
+        { value: 'otros', label: 'Otros', icon: 'MoreHorizontal', colorKey: 'other' },
+    ];
+
+export type DailyExpenseCategory =
+    | 'comida'
+    | 'transporte'
+    | 'compras'
+    | 'salud'
+    | 'entretenimiento'
+    | 'otros';
+
+export const DAILY_EXPENSE_CATEGORIES: {
+    value: DailyExpenseCategory;
+    label: string;
+    icon: string;
+    colorKey: string;
+}[] = [
+        { value: 'comida', label: 'Comida', icon: 'Pizza', colorKey: 'food' },
+        { value: 'transporte', label: 'Transporte', icon: 'Car', colorKey: 'transport' },
+        { value: 'compras', label: 'Compras', icon: 'ShoppingBag', colorKey: 'shopping' },
+        { value: 'salud', label: 'Salud', icon: 'Heart', colorKey: 'health' },
+        { value: 'entretenimiento', label: 'Entretenimiento', icon: 'Gamepad2', colorKey: 'entertainment' },
+        { value: 'otros', label: 'Otros', icon: 'MoreHorizontal', colorKey: 'other' },
     ];
 
 export interface DashboardData {

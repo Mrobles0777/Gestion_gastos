@@ -19,21 +19,19 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import {
     Plus,
-    Trash2,
-    Home,
-    Zap,
-    Droplets,
-    Wifi,
-    MoreHorizontal,
+    MoreVertical,
     Pencil,
+    Trash2,
 } from 'lucide-react-native';
 import { Card, Button, Input, ResponsiveScreen } from '../components/common';
+import { ExpenseCard } from '../components/expenses';
 import { useAuth } from '../contexts/AuthContext';
 import {
     getFixedExpenses,
     addFixedExpense,
     updateFixedExpense,
     deleteFixedExpense,
+    toggleFixedExpensePaid,
 } from '../lib/dataService';
 import { checkAndTriggerBudgetAlert } from '../lib/dataService';
 import { getCurrentMonthKey, formatCurrency } from '../lib/dateHelpers';
@@ -41,13 +39,7 @@ import { Colors, Spacing, Typography, Radius } from '../theme/tokens';
 import type { FixedExpense, FixedExpenseCategory } from '../types';
 import { FIXED_EXPENSE_CATEGORIES } from '../types';
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-    Home: <Home color={Colors.text.secondary} size={20} />,
-    Zap: <Zap color={Colors.text.secondary} size={20} />,
-    Droplets: <Droplets color={Colors.text.secondary} size={20} />,
-    Wifi: <Wifi color={Colors.text.secondary} size={20} />,
-    MoreHorizontal: <MoreHorizontal color={Colors.text.secondary} size={20} />,
-};
+
 
 export function FixedExpensesScreen() {
     const { user } = useAuth();
@@ -152,6 +144,23 @@ export function FixedExpensesScreen() {
         }
     }
 
+    const handleActionPress = (item: FixedExpense) => {
+        Alert.alert(
+            item.label || item.category,
+            'Selecciona una acción:',
+            [
+                { text: 'Editar', onPress: () => setEditingExpense(item) },
+                { 
+                    text: 'Eliminar', 
+                    onPress: () => handleDelete(item.id),
+                    style: 'destructive' 
+                },
+                { text: 'Cancelar', style: 'cancel' },
+            ],
+            { cancelable: true }
+        );
+    };
+
     const total = expenses.reduce((sum: number, e: FixedExpense) => sum + e.amount, 0);
 
     if (isLoading) {
@@ -208,40 +217,17 @@ export function FixedExpensesScreen() {
                             (c) => c.value === item.category,
                         );
                         return (
-                            <Card style={styles.expenseCard}>
-                                <View style={styles.expenseRow}>
-                                    <View style={styles.iconContainer}>
-                                        {ICON_MAP[catInfo?.icon ?? 'MoreHorizontal']}
-                                    </View>
-                                    <View style={styles.expenseInfo}>
-                                        <Text style={styles.expenseCat}>
-                                            {catInfo?.label ?? item.category}
-                                        </Text>
-                                        {item.label && (
-                                            <Text style={styles.expenseLabel} numberOfLines={1}>
-                                                {item.label}
-                                            </Text>
-                                        )}
-                                    </View>
-                                    <Text style={styles.expenseAmount}>
-                                        {formatCurrency(item.amount)}
-                                    </Text>
-                                    <View style={styles.actionButtons}>
-                                        <TouchableOpacity
-                                            onPress={() => setEditingExpense(item)}
-                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                        >
-                                            <Pencil color={Colors.brand.primary} size={18} />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => handleDelete(item.id)}
-                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                        >
-                                            <Trash2 color={Colors.status.danger} size={18} />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            </Card>
+                            <ExpenseCard
+                                title={item.label || catInfo?.label || item.category}
+                                amount={item.amount}
+                                categoryLabel={catInfo?.label || item.category}
+                                categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                colorKey={catInfo?.colorKey || 'other'}
+                                subtitle={`Vence día ${item.due_day || 1}`}
+                                isPaid={item.is_paid}
+                                onPress={() => toggleFixedExpensePaid(item.id, !item.is_paid).then(() => loadData(false))}
+                                onActionPress={() => handleActionPress(item)}
+                            />
                         );
                     }}
                 />
