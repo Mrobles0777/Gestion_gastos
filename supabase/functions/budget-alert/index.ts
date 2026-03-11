@@ -1,10 +1,9 @@
-/**
- * Supabase Edge Function – Budget Alert Email (NIVEL ROBUSTO)
- */
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY_BUDGET') ?? Deno.env.get('RESEND_API_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const FROM_EMAIL = 'onboarding@resend.dev';
 
 const corsHeaders = {
@@ -30,56 +29,122 @@ serve(async (req) => {
 
   try {
     const payload: AlertPayload = await req.json();
-    const { email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
+    const { user_id, email, salary, totalSpent, totalFixed, totalDaily, pct, monthKey } = payload;
 
-    console.log(`[BudgetAlert] Procesando alerta para ${email}. Consumo: ${pct}%`);
-
-    if (!email) {
-      console.error('[BudgetAlert] ERROR: El email de destino está vacío.');
-      throw new Error('Destination email is required');
-    }
-
-    if (!salary && salary !== 0) {
-      console.error('[BudgetAlert] ERROR: El sueldo no está definido.');
-      throw new Error('Salary value is required');
-    }
+    console.log(`[BudgetAlert] Procesando alerta premium para ${email}. Consumo: ${pct}%`);
 
     if (!RESEND_API_KEY) {
-      console.error('[BudgetAlert] ERROR: RESEND_API_KEY_BUDGET no configurada en los secrets.');
-      return new Response(JSON.stringify({ error: 'Mail service not configured (Budget)' }), { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
+      throw new Error('Mail service not configured (Budget)');
     }
 
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // 1. Obtener detalles de gastos para el correo
+    const [fixedRes, dailyRes] = await Promise.all([
+      supabaseAdmin.from('fixed_expenses').select('label, category, amount').eq('user_id', user_id).eq('month', monthKey).order('amount', { ascending: false }).limit(5),
+      supabaseAdmin.from('daily_expenses').select('description, category, amount').eq('user_id', user_id).gte('date', monthKey).lte('date', monthKey.replace('-01', '-31')).order('amount', { ascending: false }).limit(5)
+    ]);
+
+    const topFixed = fixedRes.data || [];
+    const topDaily = dailyRes.data || [];
+
+    // Cálculo de color para la barra de progreso
+    const progressColor = pct >= 90 ? '#ef4444' : pct >= 75 ? '#f97316' : '#3b82f6';
     const now = new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' });
 
-    // HTML del correo
+    // HTML Premium
     const html = `
-      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
-        <h2 style="color: #ef4444; margin-top: 0;">⚠️ Límite de Presupuesto</h2>
-        <p>Has consumido el <strong>${pct}%</strong> de tu sueldo este mes (${monthKey}).</p>
-        
-        <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 6px 0; color: #64748b;">Sueldo Mensual</td>
-              <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f172a;">$${salary.toLocaleString('es-CL')}</td>
-            </tr>
-            <tr style="border-top: 1px solid #e2e8f0;">
-              <td style="padding: 10px 0 0 0; font-weight: bold; color: #0f172a;">Total Gastado</td>
-              <td style="padding: 10px 0 0 0; text-align: right; font-weight: bold; color: #ef4444; font-size: 18px;">
-                $${totalSpent.toLocaleString('es-CL')}
-              </td>
-            </tr>
-          </table>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; line-height: 1.6; margin: 0; padding: 0; background-color: #f1f5f9; }
+          .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+          .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 40px 32px; text-align: center; color: white; }
+          .alert-badge { background: rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 99px; font-size: 14px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+          .limit-value { font-size: 64px; font-weight: 800; margin: 8px 0; line-height: 1; }
+          .limit-label { font-size: 18px; opacity: 0.9; }
+          
+          .content { padding: 32px; }
+          .progress-container { background: #f1f5f9; height: 12px; border-radius: 6px; margin: 24px 0; overflow: hidden; }
+          .progress-bar { height: 100%; border-radius: 6px; width: ${Math.min(pct, 100)}%; background-color: ${progressColor}; transition: width 0.5s ease; }
+          
+          .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+          .stat-card { background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
+          .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+          .stat-value { font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+          
+          .section-title { font-size: 16px; font-weight: 700; color: #0f172a; margin: 24px 0 12px 0; display: flex; align-items: center; }
+          .expense-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+          .expense-name { color: #334155; }
+          .expense-amount { font-weight: 600; color: #0f172a; }
+          
+          .footer { padding: 24px; text-align: center; font-size: 12px; color: #94a3b8; background: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="alert-badge">⚠️ RECORDATORIO DE LÍMITE</div>
+            <div class="limit-value">${pct}%</div>
+            <div class="limit-label">Presupuesto Consumido</div>
+          </div>
+          
+          <div class="content">
+            <p style="margin-top: 0;">Hola,</p>
+            <p>Tu consumo ha superado el límite configurado. Aquí tienes el estado actual de tus finanzas para el mes de ${monthKey}:</p>
+            
+            <div class="progress-container">
+              <div class="progress-bar"></div>
+            </div>
+            
+            <div class="stats-grid" style="display: table; width: 100%;">
+              <div style="display: table-cell; width: 50%; padding-right: 8px;">
+                <div class="stat-card">
+                  <div class="stat-label">Sueldo</div>
+                  <div class="stat-value">$${salary.toLocaleString('es-CL')}</div>
+                </div>
+              </div>
+              <div style="display: table-cell; width: 50%; padding-left: 8px;">
+                <div class="stat-card">
+                  <div class="stat-label">Gastado</div>
+                  <div class="stat-value" style="color: ${progressColor};">$${totalSpent.toLocaleString('es-CL')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-title">📉 Gastos Fijos Principales</div>
+            ${topFixed.length > 0 ? topFixed.map(e => `
+              <div class="expense-item">
+                <span class="expense-name">${e.label || e.category}</span>
+                <span class="expense-amount">$${e.amount.toLocaleString('es-CL')}</span>
+              </div>
+            `).join('') : '<p style="font-size: 13px; color: #94a3b8;">No hay gastos registrados.</p>'}
+
+            <div class="section-title">🛍️ Gastos Diarios Principales</div>
+            ${topDaily.length > 0 ? topDaily.map(e => `
+              <div class="expense-item">
+                <span class="expense-name">${e.description || e.category}</span>
+                <span class="expense-amount">$${e.amount.toLocaleString('es-CL')}</span>
+              </div>
+            `).join('') : '<p style="font-size: 13px; color: #94a3b8;">No hay gastos registrados.</p>'}
+
+            <div style="margin-top: 32px; padding: 16px; background: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5; text-align: center;">
+              <p style="margin: 0; color: #9a3412; font-size: 14px; font-weight: 500;">
+                Quedan <strong>$${(salary - totalSpent).toLocaleString('es-CL')}</strong> disponibles para el resto del mes.
+              </p>
+            </div>
+          </div>
+          
+          <div class="footer">
+            Reporte inteligente de Gestión Gastos • ${now}
+          </div>
         </div>
-        <p style="color: #94a3b8; font-size: 11px; margin-top: 24px;">Reporte generado el ${now}</p>
-      </div>
+      </body>
+      </html>
     `;
 
-    console.log('[BudgetAlert] Enviando a Resend...');
-    
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -89,7 +154,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: `⚠️ Alerta: Has superado el ${pct}% de tu presupuesto`,
+        subject: `🚨 Alerta de Gastos: ${pct}% de tu sueldo consumido`,
         html: html,
       }),
     });
@@ -97,24 +162,14 @@ serve(async (req) => {
     const resData = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      console.error('[BudgetAlert] Resend API Error:', resData);
-      return new Response(JSON.stringify({ error: 'Resend delivery failed', detail: resData }), {
-        status: res.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[BudgetAlert] Resend Error:', resData);
+      return new Response(JSON.stringify({ error: 'Failed to send email', detail: resData }), { status: res.status, headers: corsHeaders });
     }
 
-    console.log('[BudgetAlert] ¡Éxito!', resData);
-
-    return new Response(JSON.stringify({ success: true, id: resData.id }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ success: true, id: resData.id }), { headers: corsHeaders });
 
   } catch (error: any) {
-    console.error('[BudgetAlert] Error crítico:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[BudgetAlert] Fatal Error:', error.message);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
   }
 });
