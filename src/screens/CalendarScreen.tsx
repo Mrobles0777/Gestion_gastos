@@ -34,6 +34,7 @@ export function CalendarScreen() {
     const [expenses, setExpenses] = useState<FixedExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
 
     const monthKey = useMemo(() => {
         const year = selectedDate.getFullYear();
@@ -74,6 +75,7 @@ export function CalendarScreen() {
         const nextDate = new Date(selectedDate);
         nextDate.setMonth(selectedDate.getMonth() + offset);
         setSelectedDate(nextDate);
+        setSelectedDay(null);
         setIsLoading(true);
     };
 
@@ -82,14 +84,12 @@ export function CalendarScreen() {
         const year = selectedDate.getFullYear();
         const month = selectedDate.getMonth();
         const numDays = new Date(year, month + 1, 0).getDate();
-        const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0 (Sun) to 6 (Sat)
+        const firstDayOfWeek = new Date(year, month, 1).getDay();
         
         const days = [];
-        // Padding for previous month
         for (let i = 0; i < firstDayOfWeek; i++) {
             days.push(null);
         }
-        // Actual days
         for (let i = 1; i <= numDays; i++) {
             days.push(i);
         }
@@ -106,6 +106,11 @@ export function CalendarScreen() {
         return map;
     }, [expenses]);
 
+    const filteredExpenses = useMemo(() => {
+        if (selectedDay === null) return expenses;
+        return expenses.filter(e => e.due_day === selectedDay);
+    }, [expenses, selectedDay]);
+
     if (isLoading && expenses.length === 0) {
         return (
             <View style={styles.centered}>
@@ -116,89 +121,117 @@ export function CalendarScreen() {
 
     return (
         <View style={styles.screen}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Calendario de Pagos</Text>
-                <View style={styles.monthSelector}>
-                    <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowButton}>
-                        <ChevronLeft color={Colors.text.primary} size={24} />
-                    </TouchableOpacity>
-                    <Text style={styles.monthLabel}>
-                        {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                    </Text>
-                    <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowButton}>
-                        <ChevronRight color={Colors.text.primary} size={24} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Calendar Grid */}
-            <View style={styles.calendarContainer}>
-                <View style={styles.weekDays}>
-                    {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => (
-                        <Text key={d} style={styles.weekDayText}>{d}</Text>
-                    ))}
-                </View>
-                <View style={styles.grid}>
-                    {daysInMonth.map((day, index) => {
-                        const dayExpenses = day ? expensesByDay[day] : [];
-                        const hasUnpaid = dayExpenses?.some(e => !e.is_paid);
-                        const hasPaid = dayExpenses?.some(e => e.is_paid);
-
-                        return (
-                            <View key={index} style={styles.dayCell}>
-                                {day && (
-                                    <>
-                                        <Text style={styles.dayNumber}>{day}</Text>
-                                        <View style={styles.dotContainer}>
-                                            {hasUnpaid && <View style={[styles.dot, styles.dotUnpaid]} />}
-                                            {hasPaid && <View style={[styles.dot, styles.dotPaid]} />}
-                                        </View>
-                                    </>
-                                )}
-                            </View>
-                        );
-                    })}
-                </View>
-            </View>
-
-            {/* List of expenses for the month */}
-            <FlatList
-                data={expenses.sort((a, b) => (a.due_day || 1) - (b.due_day || 1))}
-                keyExtractor={(item) => item.id}
-                ListHeaderComponent={<Text style={styles.listHeader}>Vencimientos del Mes</Text>}
-                contentContainerStyle={styles.listContent}
-                renderItem={({ item }) => (
-                    <Card style={styles.expenseCard}>
-                        <TouchableOpacity 
-                            style={styles.expenseRow}
-                            onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
-                        >
-                            <View style={styles.statusIcon}>
-                                {item.is_paid ? (
-                                    <CheckCircle2 color={Colors.status.success} size={24} />
-                                ) : (
-                                    <Circle color={Colors.neutral[400]} size={24} />
-                                )}
-                            </View>
-                            <View style={styles.expenseInfo}>
-                                <Text style={[styles.expenseTitle, item.is_paid && styles.textPaid]}>
-                                    {item.label || item.category}
-                                </Text>
-                                <Text style={styles.expenseDue}>Vence el día {item.due_day || 1}</Text>
-                            </View>
-                            <Text style={[styles.expenseAmount, item.is_paid && styles.textPaid]}>
-                                {formatCurrency(item.amount)}
-                            </Text>
+            <View style={styles.webContainer}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={styles.title}>Calendario de Pagos</Text>
+                    <View style={styles.monthSelector}>
+                        <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowButton}>
+                            <ChevronLeft color={Colors.text.primary} size={20} />
                         </TouchableOpacity>
-                    </Card>
-                )}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No hay gastos registrados para este mes.</Text>
+                        <Text style={styles.monthLabel}>
+                            {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                        </Text>
+                        <TouchableOpacity onPress={() => changeMonth(1)} style={styles.arrowButton}>
+                            <ChevronRight color={Colors.text.primary} size={20} />
+                        </TouchableOpacity>
                     </View>
-                }
-            />
+                </View>
+
+                {/* Calendar Grid */}
+                <View style={styles.calendarContainer}>
+                    <View style={styles.weekDays}>
+                        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+                            <Text key={d} style={styles.weekDayText}>{d}</Text>
+                        ))}
+                    </View>
+                    <View style={styles.grid}>
+                        {daysInMonth.map((day, index) => {
+                            const isSelected = day === selectedDay;
+                            const dayExpenses = day ? expensesByDay[day] : [];
+                            const hasUnpaid = dayExpenses?.some(e => !e.is_paid);
+                            const hasPaid = dayExpenses?.some(e => e.is_paid);
+
+                            return (
+                                <TouchableOpacity 
+                                    key={index} 
+                                    style={[
+                                        styles.dayCell,
+                                        isSelected && styles.selectedDay
+                                    ]}
+                                    onPress={() => day && setSelectedDay(day)}
+                                    disabled={!day}
+                                >
+                                    {day && (
+                                        <>
+                                            <Text style={[
+                                                styles.dayNumber,
+                                                isSelected && styles.selectedDayText
+                                            ]}>
+                                                {day}
+                                            </Text>
+                                            <View style={styles.dotContainer}>
+                                                {hasUnpaid && <View style={[styles.dot, styles.dotUnpaid]} />}
+                                                {hasPaid && <View style={[styles.dot, styles.dotPaid]} />}
+                                            </View>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
+
+                {/* List Header */}
+                <View style={styles.listHeaderRow}>
+                    <Text style={styles.listHeader}>
+                        {selectedDay ? `Vencimientos del día ${selectedDay}` : 'Todos los Vencimientos'}
+                    </Text>
+                    {selectedDay && (
+                        <TouchableOpacity onPress={() => setSelectedDay(null)}>
+                            <Text style={styles.clearFilter}>Ver todos</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* List of expenses */}
+                <FlatList
+                    data={filteredExpenses.sort((a, b) => (a.due_day || 1) - (b.due_day || 1))}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.listContent}
+                    renderItem={({ item }) => (
+                        <Card style={styles.expenseCard}>
+                            <TouchableOpacity 
+                                style={styles.expenseRow}
+                                onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
+                            >
+                                <View style={styles.statusIcon}>
+                                    {item.is_paid ? (
+                                        <CheckCircle2 color={Colors.status.success} size={24} />
+                                    ) : (
+                                        <Circle color={Colors.neutral[700]} size={24} />
+                                    )}
+                                </View>
+                                <View style={styles.expenseInfo}>
+                                    <Text style={[styles.expenseTitle, item.is_paid && styles.textPaid]}>
+                                        {item.label || item.category}
+                                    </Text>
+                                    <Text style={styles.expenseDue}>Vence el día {item.due_day || 1}</Text>
+                                </View>
+                                <Text style={[styles.expenseAmount, item.is_paid && styles.textPaid]}>
+                                    {formatCurrency(item.amount)}
+                                </Text>
+                            </TouchableOpacity>
+                        </Card>
+                    )}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No hay gastos registrados para este día/mes.</Text>
+                        </View>
+                    }
+                    scrollEnabled={false} // Since we are likely inside a scrollable screen or small list
+                />
+            </View>
         </View>
     );
 }
@@ -207,6 +240,12 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
         backgroundColor: Colors.background.main,
+    },
+    webContainer: {
+        width: '100%',
+        maxWidth: 600, // Limit width on web
+        alignSelf: 'center',
+        paddingBottom: Spacing.xl,
     },
     centered: {
         flex: 1,
@@ -228,41 +267,49 @@ const styles = StyleSheet.create({
     monthSelector: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: Spacing.lg,
+        justifyContent: 'space-between',
         backgroundColor: Colors.background.card,
-        padding: Spacing.sm,
-        borderRadius: Radius.lg,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: Radius.md,
+        borderWidth: 1,
+        borderColor: Colors.neutral[700],
     },
     monthLabel: {
-        fontFamily: Typography.family.medium,
+        fontFamily: Typography.family.bold,
         fontSize: Typography.size.body,
         color: Colors.text.primary,
         textTransform: 'capitalize',
-        minWidth: 150,
         textAlign: 'center',
     },
     arrowButton: {
         padding: Spacing.xs,
+        backgroundColor: Colors.neutral[800],
+        borderRadius: Radius.sm,
     },
     calendarContainer: {
         backgroundColor: Colors.background.card,
-        margin: Spacing.lg,
-        marginTop: 0,
+        marginHorizontal: Spacing.lg,
+        marginBottom: Spacing.lg,
         padding: Spacing.md,
-        borderRadius: Radius.xl,
+        borderRadius: Radius.lg,
         ...Shadows.card,
     },
     weekDays: {
         flexDirection: 'row',
         marginBottom: Spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.neutral[700],
+        paddingBottom: 8,
     },
     weekDayText: {
         flex: 1,
         textAlign: 'center',
-        fontFamily: Typography.family.medium,
-        fontSize: Typography.size.tiny,
+        fontFamily: Typography.family.bold,
+        fontSize: 10,
         color: Colors.text.muted,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     grid: {
         flexDirection: 'row',
@@ -270,20 +317,30 @@ const styles = StyleSheet.create({
     },
     dayCell: {
         width: '14.28%',
-        aspectRatio: 1,
+        height: 48, // Fixed height to avoid stretching
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 2,
+        borderRadius: Radius.sm,
+        marginVertical: 2,
+    },
+    selectedDay: {
+        backgroundColor: Colors.brand.primary,
+        ...Shadows.button,
     },
     dayNumber: {
-        fontFamily: Typography.family.regular,
-        fontSize: Typography.size.small,
+        fontFamily: Typography.family.medium,
+        fontSize: Typography.size.body,
         color: Colors.text.primary,
+    },
+    selectedDayText: {
+        color: Colors.neutral.white,
+        fontFamily: Typography.family.bold,
     },
     dotContainer: {
         flexDirection: 'row',
         gap: 2,
-        marginTop: 2,
+        position: 'absolute',
+        bottom: 6,
     },
     dot: {
         width: 4,
@@ -296,16 +353,25 @@ const styles = StyleSheet.create({
     dotPaid: {
         backgroundColor: Colors.status.success,
     },
+    listHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginHorizontal: Spacing.lg,
+        marginBottom: Spacing.sm,
+    },
     listHeader: {
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.body,
         color: Colors.text.primary,
-        marginHorizontal: Spacing.lg,
-        marginBottom: Spacing.sm,
+    },
+    clearFilter: {
+        fontFamily: Typography.family.medium,
+        fontSize: Typography.size.small,
+        color: Colors.brand.primary,
     },
     listContent: {
         paddingHorizontal: Spacing.lg,
-        paddingBottom: Spacing.xl,
         gap: Spacing.sm,
     },
     expenseCard: {
@@ -326,7 +392,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     expenseTitle: {
-        fontFamily: Typography.family.medium,
+        fontFamily: Typography.family.bold,
         fontSize: Typography.size.body,
         color: Colors.text.primary,
     },
@@ -334,7 +400,7 @@ const styles = StyleSheet.create({
         fontFamily: Typography.family.regular,
         fontSize: Typography.size.tiny,
         color: Colors.text.muted,
-        marginTop: 2,
+        marginTop: 1,
     },
     expenseAmount: {
         fontFamily: Typography.family.bold,
