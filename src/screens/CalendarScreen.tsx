@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
@@ -111,6 +112,9 @@ export function CalendarScreen() {
         return expenses.filter(e => e.due_day === selectedDay);
     }, [expenses, selectedDay]);
 
+    const { width } = useWindowDimensions();
+    const isLargeScreen = width > 850;
+
     if (isLoading && expenses.length === 0) {
         return (
             <View style={styles.centered}>
@@ -121,9 +125,9 @@ export function CalendarScreen() {
 
     return (
         <View style={styles.screen}>
-            <View style={styles.webContainer}>
+            <View style={[styles.webContainer, isLargeScreen && styles.webContainerExpanded]}>
                 {/* Header */}
-                <View style={styles.header}>
+                <View style={[styles.header, isLargeScreen && styles.headerDesktop]}>
                     <Text style={styles.title}>Calendario de Pagos</Text>
                     <View style={styles.monthSelector}>
                         <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowButton}>
@@ -138,99 +142,104 @@ export function CalendarScreen() {
                     </View>
                 </View>
 
-                {/* Calendar Grid */}
-                <View style={styles.calendarContainer}>
-                    <View style={styles.weekDays}>
-                        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
-                            <Text key={d} style={styles.weekDayText}>{d}</Text>
-                        ))}
-                    </View>
-                    <View style={styles.grid}>
-                        {daysInMonth.map((day, index) => {
-                            const isSelected = day === selectedDay;
-                            const dayExpenses = day ? expensesByDay[day] : [];
-                            const hasUnpaid = dayExpenses?.some(e => !e.is_paid);
-                            const hasPaid = dayExpenses?.some(e => e.is_paid);
+                <View style={[styles.mainLayout, isLargeScreen && styles.mainLayoutDesktop]}>
+                    {/* Left Column: Calendar */}
+                    <View style={[styles.calendarColumn, isLargeScreen && styles.columnDesktop]}>
+                        <View style={styles.calendarContainer}>
+                            <View style={styles.weekDays}>
+                                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+                                    <Text key={d} style={styles.weekDayText}>{d}</Text>
+                                ))}
+                            </View>
+                            <View style={styles.grid}>
+                                {daysInMonth.map((day, index) => {
+                                    const isSelected = day === selectedDay;
+                                    const dayExpenses = day ? expensesByDay[day] : [];
+                                    const hasUnpaid = dayExpenses?.some(e => !e.is_paid);
+                                    const hasPaid = dayExpenses?.some(e => e.is_paid);
 
-                            return (
-                                <TouchableOpacity 
-                                    key={index} 
-                                    style={[
-                                        styles.dayCell,
-                                        isSelected && styles.selectedDay
-                                    ]}
-                                    onPress={() => day && setSelectedDay(day)}
-                                    disabled={!day}
-                                >
-                                    {day && (
-                                        <>
-                                            <Text style={[
-                                                styles.dayNumber,
-                                                isSelected && styles.selectedDayText
-                                            ]}>
-                                                {day}
-                                            </Text>
-                                            <View style={styles.dotContainer}>
-                                                {hasUnpaid && <View style={[styles.dot, styles.dotUnpaid]} />}
-                                                {hasPaid && <View style={[styles.dot, styles.dotPaid]} />}
-                                            </View>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </View>
-
-                {/* List Header */}
-                <View style={styles.listHeaderRow}>
-                    <Text style={styles.listHeader}>
-                        {selectedDay ? `Vencimientos del día ${selectedDay}` : 'Todos los Vencimientos'}
-                    </Text>
-                    {selectedDay && (
-                        <TouchableOpacity onPress={() => setSelectedDay(null)}>
-                            <Text style={styles.clearFilter}>Ver todos</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {/* List of expenses */}
-                <FlatList
-                    data={filteredExpenses.sort((a, b) => (a.due_day || 1) - (b.due_day || 1))}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
-                    renderItem={({ item }) => (
-                        <Card style={styles.expenseCard}>
-                            <TouchableOpacity 
-                                style={styles.expenseRow}
-                                onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
-                            >
-                                <View style={styles.statusIcon}>
-                                    {item.is_paid ? (
-                                        <CheckCircle2 color={Colors.status.success} size={24} />
-                                    ) : (
-                                        <Circle color={Colors.neutral[700]} size={24} />
-                                    )}
-                                </View>
-                                <View style={styles.expenseInfo}>
-                                    <Text style={[styles.expenseTitle, item.is_paid && styles.textPaid]}>
-                                        {item.label || item.category}
-                                    </Text>
-                                    <Text style={styles.expenseDue}>Vence el día {item.due_day || 1}</Text>
-                                </View>
-                                <Text style={[styles.expenseAmount, item.is_paid && styles.textPaid]}>
-                                    {formatCurrency(item.amount)}
-                                </Text>
-                            </TouchableOpacity>
-                        </Card>
-                    )}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No hay gastos registrados para este día/mes.</Text>
+                                    return (
+                                        <TouchableOpacity 
+                                            key={index} 
+                                            style={[
+                                                styles.dayCell,
+                                                isSelected && styles.selectedDay
+                                            ]}
+                                            onPress={() => day && setSelectedDay(day)}
+                                            disabled={!day}
+                                        >
+                                            {day && (
+                                                <>
+                                                    <Text style={[
+                                                        styles.dayNumber,
+                                                        isSelected && styles.selectedDayText
+                                                    ]}>
+                                                        {day}
+                                                    </Text>
+                                                    <View style={styles.dotContainer}>
+                                                        {hasUnpaid && <View style={[styles.dot, styles.dotUnpaid]} />}
+                                                        {hasPaid && <View style={[styles.dot, styles.dotPaid]} />}
+                                                    </View>
+                                                </>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
                         </View>
-                    }
-                    scrollEnabled={false} // Since we are likely inside a scrollable screen or small list
-                />
+                    </View>
+
+                    {/* Right Column: List */}
+                    <View style={[styles.listColumn, isLargeScreen && styles.columnDesktop]}>
+                        <View style={styles.listHeaderRow}>
+                            <Text style={styles.listHeader}>
+                                {selectedDay ? `Día ${selectedDay}` : 'Todos los Vencimientos'}
+                            </Text>
+                            {selectedDay && (
+                                <TouchableOpacity onPress={() => setSelectedDay(null)}>
+                                    <Text style={styles.clearFilter}>Ver todos</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        <FlatList
+                            data={filteredExpenses.sort((a, b) => (a.due_day || 1) - (b.due_day || 1))}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={styles.listContent}
+                            renderItem={({ item }) => (
+                                <Card style={styles.expenseCard}>
+                                    <TouchableOpacity 
+                                        style={styles.expenseRow}
+                                        onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
+                                    >
+                                        <View style={styles.statusIcon}>
+                                            {item.is_paid ? (
+                                                <CheckCircle2 color={Colors.status.success} size={22} />
+                                            ) : (
+                                                <Circle color={Colors.neutral[700]} size={22} />
+                                            )}
+                                        </View>
+                                        <View style={styles.expenseInfo}>
+                                            <Text style={[styles.expenseTitle, item.is_paid && styles.textPaid]}>
+                                                {item.label || item.category}
+                                            </Text>
+                                            <Text style={styles.expenseDue}>Día {item.due_day || 1}</Text>
+                                        </View>
+                                        <Text style={[styles.expenseAmount, item.is_paid && styles.textPaid]}>
+                                            {formatCurrency(item.amount)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </Card>
+                            )}
+                            ListEmptyComponent={
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>No hay gastos.</Text>
+                                </View>
+                            }
+                            scrollEnabled={!isLargeScreen}
+                        />
+                    </View>
+                </View>
             </View>
         </View>
     );
@@ -243,9 +252,12 @@ const styles = StyleSheet.create({
     },
     webContainer: {
         width: '100%',
-        maxWidth: 600, // Limit width on web
+        maxWidth: 600,
         alignSelf: 'center',
         paddingBottom: Spacing.xl,
+    },
+    webContainerExpanded: {
+        maxWidth: 1100,
     },
     centered: {
         flex: 1,
@@ -257,6 +269,9 @@ const styles = StyleSheet.create({
         paddingTop: Spacing.xxl + Spacing.lg,
         paddingHorizontal: Spacing.lg,
         paddingBottom: Spacing.md,
+    },
+    headerDesktop: {
+        paddingHorizontal: Spacing.xl,
     },
     title: {
         fontFamily: Typography.family.bold,
@@ -286,6 +301,24 @@ const styles = StyleSheet.create({
         padding: Spacing.xs,
         backgroundColor: Colors.neutral[800],
         borderRadius: Radius.sm,
+    },
+    mainLayout: {
+        flex: 1,
+    },
+    mainLayoutDesktop: {
+        flexDirection: 'row',
+        paddingHorizontal: Spacing.lg,
+        gap: Spacing.lg,
+    },
+    calendarColumn: {
+        flex: 1,
+    },
+    listColumn: {
+        flex: 1,
+        maxWidth: 450,
+    },
+    columnDesktop: {
+        padding: 0,
     },
     calendarContainer: {
         backgroundColor: Colors.background.card,
