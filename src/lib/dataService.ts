@@ -382,6 +382,19 @@ export async function checkAndTriggerBudgetAlert(
     return true;
 }
 
+export async function triggerPaymentReminder(): Promise<{ success: boolean; message?: string }> {
+    console.log('--- Triggering Payment Reminder Simulation ---');
+    const { data, error } = await supabase.functions.invoke('payment-reminder');
+
+    if (error) {
+        console.error('Payment reminder edge function error:', error);
+        throw new Error(error.message);
+    }
+
+    console.log('Payment reminder function response:', data);
+    return { success: true, message: data.message };
+}
+
 export async function clearUserCache(userId: string): Promise<void> {
     const month = getCurrentMonthKey();
     const keys = [

@@ -11,10 +11,13 @@ import {
     Modal,
     TouchableOpacity,
     ScrollView,
+    ActivityIndicator,
+    Alert,
 } from 'react-native';
-import { Bell, X, Calendar, ArrowRight, CheckCircle2 } from 'lucide-react-native';
+import { Bell, X, Calendar, ArrowRight, CheckCircle2, Mail } from 'lucide-react-native';
 import { Colors, Spacing, Typography, Radius, Shadows } from '../../theme/tokens';
 import { formatCurrency } from '../../lib/dateHelpers';
+import { triggerPaymentReminder } from '../../lib/dataService';
 import type { FixedExpense } from '../../types';
 
 interface PaymentReminderModalProps {
@@ -24,7 +27,23 @@ interface PaymentReminderModalProps {
 }
 
 export function PaymentReminderModal({ visible, onClose, expenses }: PaymentReminderModalProps) {
+    const [isSending, setIsSending] = React.useState(false);
     const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const handleSendSimulation = async () => {
+        setIsSending(true);
+        try {
+            await triggerPaymentReminder();
+            Alert.alert(
+                'Simulación Exitosa',
+                'Se ha solicitado el envío del recordatorio. Si tienes gastos vencidos hoy, recibirás un email pronto.'
+            );
+        } catch (error: any) {
+            Alert.alert('Error en Simulación', error.message);
+        } finally {
+            setIsSending(false);
+        }
+    };
 
     return (
         <Modal
@@ -45,7 +64,7 @@ export function PaymentReminderModal({ visible, onClose, expenses }: PaymentRemi
                             Hoy tienes {expenses.length} {expenses.length === 1 ? 'gasto vencido' : 'gastos vencidos'}.
                         </Text>
                         
-                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                        <TouchableOpacity style={styles.closeButton} onPress={onClose} disabled={isSending}>
                             <X color={Colors.text.muted} size={20} />
                         </TouchableOpacity>
                     </View>
@@ -69,11 +88,27 @@ export function PaymentReminderModal({ visible, onClose, expenses }: PaymentRemi
 
                     <View style={styles.footer}>
                         <View style={styles.totalRow}>
-                            <Text style={styles.totalLabel}>Total Pendiente</Text>
-                            <Text style={styles.totalValue}>{formatCurrency(totalAmount)}</Text>
+                            <View>
+                                <Text style={styles.totalLabel}>Total Pendiente</Text>
+                                <Text style={styles.totalValue}>{formatCurrency(totalAmount)}</Text>
+                            </View>
+                            <TouchableOpacity 
+                                style={[styles.sendButton, isSending && styles.buttonDisabled]} 
+                                onPress={handleSendSimulation}
+                                disabled={isSending}
+                            >
+                                {isSending ? (
+                                    <ActivityIndicator size="small" color={Colors.brand.primary} />
+                                ) : (
+                                    <>
+                                        <Mail color={Colors.brand.primary} size={18} />
+                                        <Text style={styles.sendButtonText}>Simular Envío</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
                         </View>
                         
-                        <TouchableOpacity style={styles.actionButton} onPress={onClose}>
+                        <TouchableOpacity style={styles.actionButton} onPress={onClose} disabled={isSending}>
                             <Text style={styles.actionButtonText}>Entendido</Text>
                             <CheckCircle2 color={Colors.neutral.white} size={18} />
                         </TouchableOpacity>
@@ -198,6 +233,26 @@ const styles = StyleSheet.create({
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.h3,
         color: Colors.text.primary,
+    },
+    sendButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: Radius.full,
+        borderWidth: 1,
+        borderColor: Colors.brand.primary,
+        backgroundColor: Colors.neutral.white,
+    },
+    sendButtonText: {
+        fontFamily: Typography.family.bold,
+        fontSize: Typography.size.small,
+        color: Colors.brand.primary,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+        borderColor: Colors.neutral[700],
     },
     actionButton: {
         flexDirection: 'row',
