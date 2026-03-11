@@ -11,7 +11,8 @@ export function getCurrentMonthKey(): MonthKey {
 }
 
 export function buildMonthKey(year: number, month: number): MonthKey {
-    const key = `${year}-${String(month).padStart(2, '0')}`;
+    const monthStr = month < 10 ? `0${month}` : `${month}`;
+    const key = `${year}-${monthStr}`;
     const firstDay = `${key}-01`;
     const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
     return { year, month, key, firstDay, lastDay };
