@@ -168,7 +168,7 @@ export function DailyExpensesScreen() {
                     sections={sections}
                     keyExtractor={(item: DailyExpense) => item.id}
                     scrollEnabled={isLargeScreen}
-                    style={{ flex: 1 }}
+                    style={isLargeScreen ? { flex: 1 } : null}
                     contentContainerStyle={styles.listContent}
                     renderSectionHeader={({ section: { title } }: { section: { title: string } }) => (
                         <Text style={styles.sectionHeader}>{title}</Text>
@@ -365,6 +365,7 @@ const styles = StyleSheet.create({
     listContent: {
         padding: Spacing.lg,
         paddingTop: 0,
+        paddingBottom: 100, // Clearance for tab bar
     },
     sectionHeader: {
         fontFamily: Typography.family.semiBold,

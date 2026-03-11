@@ -201,7 +201,7 @@ export function FixedExpensesScreen() {
                     data={expenses}
                     keyExtractor={(item: FixedExpense) => item.id}
                     scrollEnabled={isLargeScreen}
-                    style={{ flex: 1 }}
+                    style={isLargeScreen ? { flex: 1 } : null}
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }: { item: FixedExpense }) => {
                         const catInfo = FIXED_EXPENSE_CATEGORIES.find(
@@ -530,6 +530,7 @@ const styles = StyleSheet.create({
         padding: Spacing.lg,
         paddingTop: 0,
         gap: Spacing.sm,
+        paddingBottom: 100, // Clearance for tab bar
     },
     expenseCard: {
         padding: Spacing.md,

@@ -145,9 +145,9 @@ export function CalendarScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.mainLayout, isLargeScreen && styles.mainLayoutDesktop]}>
+                <View style={[isLargeScreen && styles.mainLayout, isLargeScreen && styles.mainLayoutDesktop]}>
                     {/* Left Column: Calendar */}
-                    <View style={[styles.calendarColumn, isLargeScreen && styles.columnDesktop]}>
+                    <View style={[isLargeScreen && styles.calendarColumn, isLargeScreen && styles.columnDesktop]}>
                         <View style={styles.calendarContainer}>
                             <View style={styles.weekDays}>
                                 {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
@@ -193,7 +193,7 @@ export function CalendarScreen() {
                     </View>
 
                     {/* Right Column: List */}
-                    <View style={[styles.listColumn, isLargeScreen && styles.columnDesktop]}>
+                    <View style={[isLargeScreen && styles.listColumn, isLargeScreen && styles.columnDesktop]}>
                         <View style={styles.listHeaderRow}>
                             <Text style={styles.listHeader}>
                                 {selectedDay ? `Día ${selectedDay}` : 'Todos los Vencimientos'}
@@ -402,6 +402,7 @@ const styles = StyleSheet.create({
     listContent: {
         paddingHorizontal: Spacing.lg,
         gap: Spacing.sm,
+        paddingBottom: 100, // Clearance for tab bar
     },
     expenseCard: {
         padding: Spacing.md,
