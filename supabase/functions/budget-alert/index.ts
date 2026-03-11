@@ -39,14 +39,36 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Formatear fechas para las consultas
+    // monthKey viene como YYYY-MM
+    const firstDay = `${monthKey}-01`;
+    const lastDay = `${monthKey}-31`; // Suficiente para cubrir el mes
+
+    console.log(`[BudgetAlert] Querying with firstDay: ${firstDay}, lastDay: ${lastDay}`);
+
     // 1. Obtener detalles de gastos reales para el desglose
     const [fixedRes, dailyRes] = await Promise.all([
-      supabaseAdmin.from('fixed_expenses').select('label, category, amount').eq('user_id', user_id).eq('month', monthKey).order('amount', { ascending: false }).limit(5),
-      supabaseAdmin.from('daily_expenses').select('description, category, amount').eq('user_id', user_id).gte('date', monthKey).lte('date', monthKey.replace('-01', '-31')).order('amount', { ascending: false }).limit(5)
+      supabaseAdmin.from('fixed_expenses')
+        .select('label, category, amount')
+        .eq('user_id', user_id)
+        .eq('month', firstDay) // Importante: debe ser el primer día del mes
+        .order('amount', { ascending: false })
+        .limit(5),
+      supabaseAdmin.from('daily_expenses')
+        .select('description, category, amount')
+        .eq('user_id', user_id)
+        .gte('date', firstDay)
+        .lte('date', lastDay)
+        .order('amount', { ascending: false })
+        .limit(5)
     ]);
 
     const topFixed = fixedRes.data || [];
     const topDaily = dailyRes.data || [];
+
+    console.log(`[BudgetAlert] Results - Fixed: ${topFixed.length}, Daily: ${topDaily.length}`);
+    if (fixedRes.error) console.error('[BudgetAlert] Fixed Query Error:', fixedRes.error);
+    if (dailyRes.error) console.error('[BudgetAlert] Daily Query Error:', dailyRes.error);
 
     // Cálculo de color para la barra de progreso
     const progressColor = pct >= 90 ? '#ef4444' : pct >= 75 ? '#f97316' : '#3b82f6';
