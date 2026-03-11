@@ -37,9 +37,10 @@ export function CalendarScreen() {
 
     const monthKey = useMemo(() => {
         const year = selectedDate.getFullYear();
-        const month = selectedDate.getMonth() + 1;
-        const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
-        return { firstDay, month, year };
+        const monthNum = selectedDate.getMonth() + 1;
+        const monthStr = monthNum < 10 ? `0${monthNum}` : `${monthNum}`;
+        const firstDay = `${year}-${monthStr}-01`;
+        return { firstDay, month: monthNum, year };
     }, [selectedDate]);
 
     const loadData = useCallback(async () => {

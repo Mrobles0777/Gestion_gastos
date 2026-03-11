@@ -110,20 +110,25 @@ export function AppNavigator() {
     const [checkingProfile, setCheckingProfile] = useState(false);
 
     useEffect(() => {
-        if (!user) {
-            setNeedsOnboarding(null);
-            return;
+        async function checkProfile() {
+            if (!user) {
+                setNeedsOnboarding(null);
+                return;
+            }
+
+            try {
+                setCheckingProfile(true);
+                const profile = await getProfile(user.id);
+                setNeedsOnboarding(!profile || profile.monthly_salary <= 0);
+            } catch (error) {
+                console.error('Error fetching profile in AppNavigator:', error);
+                setNeedsOnboarding(true);
+            } finally {
+                setCheckingProfile(false);
+            }
         }
 
-        setCheckingProfile(true);
-        getProfile(user.id)
-            .then((profile) => {
-                setNeedsOnboarding(!profile || profile.monthly_salary <= 0);
-            })
-            .catch(() => {
-                setNeedsOnboarding(true);
-            })
-            .finally(() => setCheckingProfile(false));
+        checkProfile();
     }, [user]);
 
     if (authLoading || checkingProfile) {
