@@ -54,13 +54,19 @@ export function FixedExpensesScreen() {
 
     const month = getCurrentMonthKey();
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (useCache = false) => {
         if (!user) return;
         try {
-            const data = await getFixedExpenses(user.id, month.firstDay);
+            const data = await getFixedExpenses(user.id, month.firstDay, useCache);
             setExpenses(data);
+
+            if (useCache) {
+                getFixedExpenses(user.id, month.firstDay).then(setExpenses).catch(() => {});
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            if (error.message !== 'TIMEOUT') {
+                Alert.alert('Error', error.message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -68,8 +74,7 @@ export function FixedExpensesScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            setIsLoading(true);
-            loadData();
+            loadData(true);
         }, [loadData]),
     );
 
@@ -101,7 +106,7 @@ export function FixedExpensesScreen() {
         ]);
     }
 
-    async function handleAdd(category: FixedExpenseCategory, amount: number, label: string) {
+    async function handleAdd(category: FixedExpenseCategory, amount: number, label: string, dueDay: number) {
         if (!user) return;
         try {
             const newExpense = await addFixedExpense({
@@ -122,7 +127,7 @@ export function FixedExpensesScreen() {
         }
     }
 
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const total = expenses.reduce((sum: number, e: FixedExpense) => sum + e.amount, 0);
 
     if (isLoading) {
         return (

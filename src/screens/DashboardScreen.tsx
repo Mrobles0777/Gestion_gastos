@@ -41,18 +41,26 @@ export function DashboardScreen() {
 
     const monthKey = getCurrentMonthKey();
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (useCache = false) => {
         if (!user) return;
         try {
-            const [dashboard, fixedExpenses] = await Promise.all([
-                getDashboardData(user.id),
-                getFixedExpenses(user.id, monthKey.firstDay)
-            ]);
+            // If using cache, it will return immediately if data exists
+            const dashboard = await getDashboardData(user.id, useCache);
             setData(dashboard);
-            const pending = fixedExpenses.filter(e => !e.is_paid).length;
-            setPendingPayments(pending);
+            setPendingPayments(dashboard.pendingPayments ?? 0);
+            
+            // If we just loaded from cache, trigger a background refresh
+            if (useCache) {
+                // Fetch fresh data in background
+                getDashboardData(user.id).then(freshData => {
+                    setData(freshData);
+                    setPendingPayments(freshData.pendingPayments ?? 0);
+                }).catch(err => console.warn('Background refresh failed', err));
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            if (error.message !== 'TIMEOUT') {
+                Alert.alert('Error', error.message);
+            }
         } finally {
             setIsLoading(false);
             setRefreshing(false);
@@ -61,8 +69,7 @@ export function DashboardScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            setIsLoading(true);
-            loadData();
+            loadData(true); // Load from cache first
         }, [loadData]),
     );
 

@@ -117,12 +117,21 @@ export function AppNavigator() {
             }
 
             try {
-                setCheckingProfile(true);
-                const profile = await getProfile(user.id);
-                setNeedsOnboarding(!profile || profile.monthly_salary <= 0);
+                // Use cache first for instant transition
+                const profile = await getProfile(user.id, true);
+                if (profile) {
+                    setNeedsOnboarding(profile.monthly_salary <= 0);
+                }
+
+                // Background refresh to ensure data is fresh
+                const freshProfile = await getProfile(user.id);
+                if (freshProfile) {
+                    setNeedsOnboarding(freshProfile.monthly_salary <= 0);
+                }
             } catch (error) {
                 console.error('Error fetching profile in AppNavigator:', error);
-                setNeedsOnboarding(true);
+                // If it's a timeout and we still don't have needsOnboarding, default to true
+                if (needsOnboarding === null) setNeedsOnboarding(true);
             } finally {
                 setCheckingProfile(false);
             }

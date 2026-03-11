@@ -41,13 +41,19 @@ export function DailyExpensesScreen() {
 
     const month = getCurrentMonthKey();
 
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (useCache = false) => {
         if (!user) return;
         try {
-            const data = await getDailyExpenses(user.id, month.firstDay, month.lastDay);
+            const data = await getDailyExpenses(user.id, month.firstDay, month.lastDay, useCache);
             setExpenses(data);
+
+            if (useCache) {
+                getDailyExpenses(user.id, month.firstDay, month.lastDay).then(setExpenses).catch(() => {});
+            }
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            if (error.message !== 'TIMEOUT') {
+                Alert.alert('Error', error.message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -55,8 +61,7 @@ export function DailyExpensesScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            setIsLoading(true);
-            loadData();
+            loadData(true); // cache first
         }, [loadData]),
     );
 
@@ -108,7 +113,7 @@ export function DailyExpensesScreen() {
         }
     }
 
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const total = expenses.reduce((sum: number, e: DailyExpense) => sum + e.amount, 0);
 
     // Group by date for SectionList
     const sections = groupByDate(expenses);

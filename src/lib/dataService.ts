@@ -1,3 +1,4 @@
+/// <reference types="expo-secure-store" />
 /**
  * Data Services – API layer for Supabase queries.
  * Rule I: Logic layer is "blind" – doesn't know about UI.
@@ -7,6 +8,7 @@
 
 import { supabase } from './supabase';
 import { getCurrentMonthKey } from './dateHelpers';
+import * as SecureStore from 'expo-secure-store';
 import type {
     Profile,
     FixedExpense,
@@ -14,19 +16,62 @@ import type {
     DashboardData,
 } from '../types';
 
+const CACHE_KEYS = {
+    PROFILE: (userId: string) => `cache_profile_${userId}`,
+    DASHBOARD: (userId: string) => `cache_dashboard_${userId}`,
+    FIXED_EXPENSES: (userId: string, month: string) => `cache_fixed_${userId}_${month}`,
+    DAILY_EXPENSES: (userId: string, start: string, end: string) => `cache_daily_${userId}_${start}_${end}`,
+};
+
+const DEFAULT_TIMEOUT = 8000; // 8 seconds
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = DEFAULT_TIMEOUT): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
+        ),
+    ]);
+}
+
 // ────────────────────────── Profile ──────────────────────────
 
-export async function getProfile(userId: string): Promise<Profile | null> {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+export async function getProfile(userId: string, useCacheFirst = false): Promise<Profile | null> {
+    const cacheKey = CACHE_KEYS.PROFILE(userId);
 
-    if (error && error.code !== 'PGRST116') {
-        throw new Error(`getProfile: ${error.message}`);
+    if (useCacheFirst) {
+        try {
+            const cached = await SecureStore.getItemAsync(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.warn('Failed to read profile from cache', e);
+        }
     }
-    return data;
+
+    try {
+        const { data, error } = (await withTimeout(
+            supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single()
+        )) as { data: Profile | null, error: any };
+
+        if (error && error.code !== 'PGRST116') {
+            throw new Error(`getProfile: ${error.message}`);
+        }
+
+        if (data) {
+            await SecureStore.setItemAsync(cacheKey, JSON.stringify(data));
+        }
+        return data;
+    } catch (err: any) {
+        if (err.message === 'TIMEOUT') {
+            const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
+            if (cached) return JSON.parse(cached);
+        }
+        throw err;
+    }
 }
 
 export async function upsertProfile(
@@ -50,16 +95,41 @@ export async function upsertProfile(
 export async function getFixedExpenses(
     userId: string,
     monthFirstDay: string,
+    useCacheFirst = false
 ): Promise<FixedExpense[]> {
-    const { data, error } = await supabase
-        .from('fixed_expenses')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('month', monthFirstDay)
-        .order('created_at', { ascending: false });
+    const cacheKey = CACHE_KEYS.FIXED_EXPENSES(userId, monthFirstDay);
 
-    if (error) throw new Error(`getFixedExpenses: ${error.message}`);
-    return data ?? [];
+    if (useCacheFirst) {
+        try {
+            const cached = await SecureStore.getItemAsync(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.warn('Failed to read fixed expenses from cache', e);
+        }
+    }
+
+    try {
+        const { data, error } = (await withTimeout(
+            supabase
+                .from('fixed_expenses')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('month', monthFirstDay)
+                .order('created_at', { ascending: false })
+        )) as { data: FixedExpense[] | null, error: any };
+
+        if (error) throw new Error(`getFixedExpenses: ${error.message}`);
+        
+        const result = data ?? [];
+        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        return result;
+    } catch (err: any) {
+        if (err.message === 'TIMEOUT') {
+            const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
+            if (cached) return JSON.parse(cached);
+        }
+        throw err;
+    }
 }
 
 export async function addFixedExpense(
@@ -109,17 +179,42 @@ export async function getDailyExpenses(
     userId: string,
     startDate: string,
     endDate: string,
+    useCacheFirst = false
 ): Promise<DailyExpense[]> {
-    const { data, error } = await supabase
-        .from('daily_expenses')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: false });
+    const cacheKey = CACHE_KEYS.DAILY_EXPENSES(userId, startDate, endDate);
 
-    if (error) throw new Error(`getDailyExpenses: ${error.message}`);
-    return data ?? [];
+    if (useCacheFirst) {
+        try {
+            const cached = await SecureStore.getItemAsync(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.warn('Failed to read daily expenses from cache', e);
+        }
+    }
+
+    try {
+        const { data, error } = (await withTimeout(
+            supabase
+                .from('daily_expenses')
+                .select('*')
+                .eq('user_id', userId)
+                .gte('date', startDate)
+                .lte('date', endDate)
+                .order('date', { ascending: false })
+        )) as { data: DailyExpense[] | null, error: any };
+
+        if (error) throw new Error(`getDailyExpenses: ${error.message}`);
+        
+        const result = data ?? [];
+        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        return result;
+    } catch (err: any) {
+        if (err.message === 'TIMEOUT') {
+            const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
+            if (cached) return JSON.parse(cached);
+        }
+        throw err;
+    }
 }
 
 export async function addDailyExpense(
@@ -157,24 +252,56 @@ export async function deleteDailyExpense(id: string): Promise<void> {
 
 // ────────────────────── Dashboard ────────────────────────────
 
-export async function getDashboardData(userId: string): Promise<DashboardData> {
+export async function getDashboardData(userId: string, useCacheFirst = false): Promise<DashboardData> {
+    const cacheKey = CACHE_KEYS.DASHBOARD(userId);
     const month = getCurrentMonthKey();
 
-    const [profile, fixedExpenses, dailyExpenses] = await Promise.all([
-        getProfile(userId),
-        getFixedExpenses(userId, month.firstDay),
-        getDailyExpenses(userId, month.firstDay, month.lastDay),
-    ]);
+    if (useCacheFirst) {
+        try {
+            const cached = await SecureStore.getItemAsync(cacheKey);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            console.warn('Failed to read dashboard from cache', e);
+        }
+    }
 
-    const salary = profile?.monthly_salary ?? 0;
-    const alertThreshold = profile?.alert_threshold ?? 75;
-    const totalFixed = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalDaily = dailyExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalSpent = totalFixed + totalDaily;
-    const available = salary - totalSpent;
-    const percentConsumed = salary > 0 ? (totalSpent / salary) * 100 : 0;
+    try {
+        const [profile, fixedExpenses, dailyExpenses] = await withTimeout(
+            Promise.all([
+                getProfile(userId),
+                getFixedExpenses(userId, month.firstDay),
+                getDailyExpenses(userId, month.firstDay, month.lastDay),
+            ])
+        );
 
-    return { salary, totalFixed, totalDaily, totalSpent, available, percentConsumed, alertThreshold };
+        const salary = profile?.monthly_salary ?? 0;
+        const alertThreshold = profile?.alert_threshold ?? 75;
+        const totalFixed = (fixedExpenses as FixedExpense[]).reduce((sum: number, e: FixedExpense) => sum + e.amount, 0);
+        const totalDaily = (dailyExpenses as DailyExpense[]).reduce((sum: number, e: DailyExpense) => sum + e.amount, 0);
+        const totalSpent = totalFixed + totalDaily;
+        const available = salary - totalSpent;
+        const percentConsumed = salary > 0 ? (totalSpent / salary) * 100 : 0;
+        const pendingPayments = (fixedExpenses as FixedExpense[]).filter((e: FixedExpense) => !e.is_paid).length;
+
+        const result = { 
+            salary, 
+            totalFixed, 
+            totalDaily, 
+            totalSpent, 
+            available, 
+            percentConsumed, 
+            alertThreshold,
+            pendingPayments
+        };
+        await SecureStore.setItemAsync(cacheKey, JSON.stringify(result));
+        return result;
+    } catch (err: any) {
+        if (err.message === 'TIMEOUT') {
+            const cached = await SecureStore.getItemAsync(cacheKey).catch(() => null);
+            if (cached) return JSON.parse(cached);
+        }
+        throw err;
+    }
 }
 
 // ────────────────────── Budget Alert ─────────────────────────

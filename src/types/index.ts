@@ -64,6 +64,7 @@ export interface DashboardData {
     available: number;
     percentConsumed: number;
     alertThreshold: number;
+    pendingPayments?: number;
 }
 
 export interface MonthKey {
