@@ -13,6 +13,7 @@ import {
     RefreshControl,
     ActivityIndicator,
     Alert,
+    TouchableOpacity,
     useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -24,6 +25,7 @@ import {
     PiggyBank,
     LogOut,
     Settings,
+    ArrowRight,
 } from 'lucide-react-native';
 import { Card, ProgressBar, Button, ResponsiveScreen } from '../components/common';
 import { BudgetImpactCard } from '../components/dashboard/BudgetImpactCard';
@@ -33,7 +35,7 @@ import { formatCurrency, getCurrentMonthKey } from '../lib/dateHelpers';
 import { Colors, Spacing, Typography, Radius, Shadows } from '../theme/tokens';
 import type { DashboardData } from '../types';
 
-export function DashboardScreen() {
+export function DashboardScreen({ navigation }: { navigation: any }) {
     const { user, signOut } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
     const [pendingPayments, setPendingPayments] = useState(0);
@@ -159,31 +161,43 @@ export function DashboardScreen() {
                 <View style={styles.secondaryColumn}>
                     {pendingPayments > 0 && (
                         <Card style={styles.pendingCard}>
-                            <View style={styles.pendingRow}>
-                                <Calendar color={Colors.status.danger} size={20} />
-                                <Text style={styles.pendingText}>
-                                    Tienes {pendingPayments} pago{pendingPayments > 1 ? 's' : ''} pendiente{pendingPayments > 1 ? 's' : ''}.
-                                </Text>
-                            </View>
+                            <TouchableOpacity 
+                                style={styles.pendingRow}
+                                activeOpacity={0.7}
+                                onPress={() => (navigation as any).navigate('FixedExpenses')}
+                            >
+                                <View style={styles.pendingIconBadge}>
+                                    <Calendar color={Colors.status.danger} size={20} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.pendingTitle}>Pagos pendientes</Text>
+                                    <Text style={styles.pendingText}>
+                                        Tienes {pendingPayments} pago{pendingPayments > 1 ? 's' : ''} pendiente{pendingPayments > 1 ? 's' : ''} por cubrir hoy.
+                                    </Text>
+                                </View>
+                                <ArrowRight color={Colors.status.danger} size={18} />
+                            </TouchableOpacity>
                         </Card>
                     )}
 
                     {/* Stats Grid */}
                     <View style={styles.statsGrid}>
                         <StatCard
-                            icon={<TrendingDown color={Colors.status.danger} size={22} />}
+                            icon={<TrendingDown />}
                             label="Gastos fijos"
                             value={formatCurrency(data.totalFixed)}
                             color={Colors.status.danger}
+                            onPress={() => (navigation as any).navigate('FixedExpenses')}
                         />
                         <StatCard
-                            icon={<Calendar color={Colors.status.warning} size={22} />}
+                            icon={<Calendar />}
                             label="Gastos diarios"
                             value={formatCurrency(data.totalDaily)}
                             color={Colors.status.warning}
+                            onPress={() => (navigation as any).navigate('DailyExpenses')}
                         />
                         <StatCard
-                            icon={<TrendingDown color={Colors.status.info} size={22} />}
+                            icon={<TrendingDown />}
                             label="Total gastado"
                             value={formatCurrency(data.totalSpent)}
                             color={Colors.status.info}
@@ -202,21 +216,29 @@ function StatCard({
     label,
     value,
     color,
+    onPress,
 }: {
     icon: React.ReactNode;
     label: string;
     value: string;
     color: string;
+    onPress?: () => void;
 }) {
     return (
         <Card style={styles.stat}>
-            <View style={styles.statIconRow}>
-                {icon}
-            </View>
-            <Text style={styles.statLabel}>{label}</Text>
-            <Text style={[styles.statValue, { color }]} numberOfLines={1}>
-                {value}
-            </Text>
+            <TouchableOpacity 
+                onPress={onPress} 
+                activeOpacity={0.7}
+                disabled={!onPress}
+            >
+                <View style={[styles.statIconBadge, { backgroundColor: `${color}15` }]}>
+                    {React.cloneElement(icon as React.ReactElement, { color, size: 20 })}
+                </View>
+                <Text style={styles.statLabel}>{label}</Text>
+                <Text style={[styles.statValue, { color }]} numberOfLines={1}>
+                    {value}
+                </Text>
+            </TouchableOpacity>
         </Card>
     );
 }
@@ -321,8 +343,14 @@ const styles = StyleSheet.create({
     stat: {
         width: '47%',
         flexGrow: 1,
+        padding: Spacing.md,
     },
-    statIconRow: {
+    statIconBadge: {
+        width: 40,
+        height: 40,
+        borderRadius: Radius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: Spacing.sm,
     },
     statLabel: {
@@ -336,8 +364,8 @@ const styles = StyleSheet.create({
         fontSize: Typography.size.h3,
     },
     pendingCard: {
-        backgroundColor: Colors.status.danger + '10', // 10% opacity
-        borderColor: Colors.status.danger + '40',
+        backgroundColor: Colors.status.danger + '08', // Even more subtle
+        borderColor: Colors.status.danger + '20',
         borderWidth: 1,
         marginBottom: Spacing.md,
         padding: Spacing.md,
@@ -345,12 +373,25 @@ const styles = StyleSheet.create({
     pendingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: Spacing.sm,
+        gap: Spacing.md,
     },
-    pendingText: {
-        fontFamily: Typography.family.medium,
+    pendingIconBadge: {
+        width: 40,
+        height: 40,
+        borderRadius: Radius.md,
+        backgroundColor: Colors.status.danger + '20',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pendingTitle: {
+        fontFamily: Typography.family.bold,
         fontSize: Typography.size.small,
         color: Colors.status.danger,
-        flex: 1,
+    },
+    pendingText: {
+        fontFamily: Typography.family.regular,
+        fontSize: Typography.size.tiny,
+        color: Colors.text.secondary,
+        marginTop: 2,
     },
 });
