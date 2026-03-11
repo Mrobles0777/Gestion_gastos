@@ -14,6 +14,7 @@ import {
     ActivityIndicator,
     Alert,
     useWindowDimensions,
+    ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
@@ -205,42 +206,57 @@ export function CalendarScreen() {
                             )}
                         </View>
 
-                        <FlatList
-                            data={filteredExpenses.sort((a: FixedExpense, b: FixedExpense) => (a.due_day || 1) - (b.due_day || 1))}
-                            keyExtractor={(item) => item.id}
-                            contentContainerStyle={styles.listContent}
-                            renderItem={({ item }: { item: FixedExpense }) => (
-                                <Card style={styles.expenseCard}>
-                                    <TouchableOpacity 
-                                        style={styles.expenseRow}
-                                        onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
-                                    >
-                                        <View style={styles.statusIcon}>
-                                            {item.is_paid ? (
-                                                <CheckCircle2 color={Colors.status.success} size={22} />
-                                            ) : (
-                                                <Circle color={Colors.neutral[700]} size={22} />
-                                            )}
-                                        </View>
-                                        <View style={styles.expenseInfo}>
-                                            <Text style={[styles.expenseTitle, item.is_paid && styles.textPaid]}>
-                                                {item.label || item.category}
-                                            </Text>
-                                            <Text style={styles.expenseDue}>Día {item.due_day || 1}</Text>
-                                        </View>
-                                        <Text style={[styles.expenseAmount, item.is_paid && styles.textPaid]}>
-                                            {formatCurrency(item.amount)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </Card>
-                            )}
-                            ListEmptyComponent={
-                                <View style={styles.emptyContainer}>
-                                    <Text style={styles.emptyText}>No hay gastos.</Text>
-                                </View>
-                            }
+                        <ScrollView 
+                            horizontal={isLargeScreen}
+                            showsHorizontalScrollIndicator={isLargeScreen}
                             scrollEnabled={isLargeScreen}
-                        />
+                            contentContainerStyle={isLargeScreen ? [styles.desktopGridScroll, { paddingBottom: 20 }] : null}
+                        >
+                            <View style={isLargeScreen ? styles.desktopGridContainer : styles.listContent}>
+                                {filteredExpenses
+                                    .sort((a: FixedExpense, b: FixedExpense) => (a.due_day || 1) - (b.due_day || 1))
+                                    .map((item: FixedExpense) => (
+                                        <Card key={item.id} style={[styles.expenseCard, isLargeScreen && styles.expenseCardCompact]}>
+                                            <TouchableOpacity 
+                                                style={styles.expenseRow}
+                                                onPress={() => handleTogglePaid(item.id, !!item.is_paid)}
+                                            >
+                                                <View style={styles.statusIcon}>
+                                                    {item.is_paid ? (
+                                                        <CheckCircle2 color={Colors.status.success} size={isLargeScreen ? 18 : 22} />
+                                                    ) : (
+                                                        <Circle color={Colors.neutral[700]} size={isLargeScreen ? 18 : 22} />
+                                                    )}
+                                                </View>
+                                                <View style={styles.expenseInfo}>
+                                                    <Text style={[
+                                                        styles.expenseTitle, 
+                                                        item.is_paid && styles.textPaid,
+                                                        isLargeScreen && styles.expenseTitleCompact
+                                                    ]}>
+                                                        {item.label || item.category}
+                                                    </Text>
+                                                    <Text style={[styles.expenseDue, isLargeScreen && styles.expenseDueCompact]}>
+                                                        Día {item.due_day || 1}
+                                                    </Text>
+                                                </View>
+                                                <Text style={[
+                                                    styles.expenseAmount, 
+                                                    item.is_paid && styles.textPaid,
+                                                    isLargeScreen && styles.expenseAmountCompact
+                                                ]}>
+                                                    {formatCurrency(item.amount)}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </Card>
+                                    ))}
+                                {filteredExpenses.length === 0 && (
+                                    <View style={styles.emptyContainer}>
+                                        <Text style={styles.emptyText}>No hay gastos.</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </ScrollView>
                 </View>
             </View>
         </ResponsiveScreen>
@@ -311,7 +327,7 @@ const styles = StyleSheet.create({
     },
     listColumn: {
         flex: 1,
-        maxWidth: 450,
+        maxWidth: 1000, // Increased for horizontal grid
     },
     columnDesktop: {
         padding: 0,
@@ -399,6 +415,16 @@ const styles = StyleSheet.create({
         fontSize: Typography.size.small,
         color: Colors.brand.primary,
     },
+    desktopGridScroll: {
+        flexGrow: 1,
+    },
+    desktopGridContainer: {
+        flexDirection: 'column',
+        flexWrap: 'wrap',
+        height: 480, // Enough to fit ~6 compact items vertically
+        paddingRight: Spacing.xl,
+        gap: Spacing.sm,
+    },
     listContent: {
         paddingHorizontal: Spacing.lg,
         gap: Spacing.sm,
@@ -406,6 +432,12 @@ const styles = StyleSheet.create({
     },
     expenseCard: {
         padding: Spacing.md,
+    },
+    expenseCardCompact: {
+        padding: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        width: 300, // Fixed width for columns
+        marginBottom: 0,
     },
     expenseRow: {
         flexDirection: 'row',
@@ -426,16 +458,25 @@ const styles = StyleSheet.create({
         fontSize: Typography.size.body,
         color: Colors.text.primary,
     },
+    expenseTitleCompact: {
+        fontSize: Typography.size.small,
+    },
     expenseDue: {
         fontFamily: Typography.family.regular,
         fontSize: Typography.size.tiny,
         color: Colors.text.muted,
         marginTop: 1,
     },
+    expenseDueCompact: {
+        fontSize: 10,
+    },
     expenseAmount: {
         fontFamily: Typography.family.bold,
         fontSize: Typography.size.body,
         color: Colors.text.primary,
+    },
+    expenseAmountCompact: {
+        fontSize: Typography.size.small,
     },
     textPaid: {
         color: Colors.text.muted,
