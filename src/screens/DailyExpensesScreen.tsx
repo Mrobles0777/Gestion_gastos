@@ -146,11 +146,7 @@ export function DailyExpensesScreen() {
         return chunks;
     };
 
-    // Group by date for SectionList
-    const sections = groupByDate(expenses).map(section => ({
-        ...section,
-        data: [groupIntoChunks(section.data, 6)] // Wrap chunks in one item per section
-    }));
+    const expenseColumns = groupIntoChunks(expenses, 6);
 
     if (isLoading) {
         return (
@@ -168,7 +164,7 @@ export function DailyExpensesScreen() {
         >
             {/* Header */}
             <View style={styles.header}>
-                <View>
+                <View style={styles.headerTitleContainer}>
                     <Text style={styles.title}>Gastos Diarios</Text>
                     <Text style={styles.subtitle}>
                         Total mes: {formatCurrency(total)}
@@ -195,57 +191,35 @@ export function DailyExpensesScreen() {
                     />
                 </View>
             ) : (
-                <SectionList
-                    sections={sections}
-                    keyExtractor={(item, index) => `col-${index}`}
-                    scrollEnabled={true}
-                    style={{ flex: 1 }}
-                    contentContainerStyle={styles.listContent}
-                    renderSectionHeader={({ section: { title, dayTotal } }: { section: { title: string; dayTotal: number } }) => (
-                        <View style={styles.sectionHeaderContainer}>
-                            <View style={styles.sectionHeaderTitleContainer}>
-                                <Text style={styles.sectionHeader}>{title}</Text>
-                                <View style={styles.headerLine} />
-                                <Text style={styles.sectionHeaderTotal}>
-                                    Total: {formatCurrency(dayTotal)}
-                                </Text>
-                            </View>
-                        </View>
-                    )}
-                    renderItem={({ item: columns }: { item: DailyExpense[][] }) => {
-                        return (
-                            <ScrollView 
-                                horizontal 
-                                showsHorizontalScrollIndicator={false}
-                                style={styles.horizontalScroll}
-                                contentContainerStyle={styles.horizontalScrollContent}
-                            >
-                                {columns.map((column, colIndex) => (
-                                    <View key={`col-${colIndex}`} style={styles.column}>
-                                        {column.map((expense) => {
-                                            const catInfo = DAILY_EXPENSE_CATEGORIES.find(
-                                                (c) => c.value === expense.category,
-                                            ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
-                                            
-                                            return (
-                                                <View key={expense.id} style={styles.cardWrapper}>
-                                                    <ExpenseCard
-                                                        title={expense.description}
-                                                        amount={expense.amount}
-                                                        categoryLabel={catInfo?.label || expense.category || 'Otros'}
-                                                        categoryIcon={catInfo?.icon || 'MoreHorizontal'}
-                                                        colorKey={catInfo?.colorKey || 'other'}
-                                                        onActionPress={() => handleActionPress(expense)}
-                                                    />
-                                                </View>
-                                            );
-                                        })}
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={true}
+                    contentContainerStyle={styles.horizontalListContent}
+                >
+                    {expenseColumns.map((column, colIndex) => (
+                        <View key={`col-${colIndex}`} style={styles.column}>
+                            {column.map((expense) => {
+                                const catInfo = DAILY_EXPENSE_CATEGORIES.find(
+                                    (c) => c.value === expense.category,
+                                ) || DAILY_EXPENSE_CATEGORIES.find(c => c.value === 'otros');
+                                
+                                return (
+                                    <View key={expense.id} style={styles.cardWrapper}>
+                                        <ExpenseCard
+                                            title={expense.description}
+                                            amount={expense.amount}
+                                            categoryLabel={catInfo?.label || expense.category || 'Otros'}
+                                            categoryIcon={catInfo?.icon || 'MoreHorizontal'}
+                                            colorKey={catInfo?.colorKey || 'other'}
+                                            subtitle={formatDate(expense.date)}
+                                            onActionPress={() => handleActionPress(expense)}
+                                        />
                                     </View>
-                                ))}
-                            </ScrollView>
-                        );
-                    }}
-                />
+                                );
+                            })}
+                        </View>
+                    ))}
+                </ScrollView>
             )}
 
             {/* Add Modal */}
@@ -388,8 +362,7 @@ const styles = StyleSheet.create({
         paddingTop: Spacing.xl,
         paddingBottom: Spacing.md,
     },
-    responsiveContent: {
-        paddingHorizontal: 0,
+    headerTitleContainer: {
         flex: 1,
     },
     title: {
@@ -411,27 +384,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    emptyContainer: {
+    responsiveContent: {
+        paddingHorizontal: 0,
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+        maxWidth: '100.1%',
+    },
+    horizontalListContent: {
         paddingHorizontal: Spacing.lg,
-    },
-    emptyText: {
-        fontFamily: Typography.family.regular,
-        fontSize: Typography.size.body,
-        color: Colors.text.muted,
-        textAlign: 'center',
-    },
-    listContent: {
-        paddingHorizontal: Spacing.lg,
-        paddingBottom: 100,
-    },
-    horizontalScroll: {
-        marginBottom: Spacing.md,
-    },
-    horizontalScrollContent: {
-        flexDirection: 'row',
+        paddingBottom: 40,
         gap: Spacing.md,
     },
     column: {
