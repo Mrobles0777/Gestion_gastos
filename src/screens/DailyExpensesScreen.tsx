@@ -29,6 +29,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
     getDailyExpenses,
     addDailyExpense,
+    updateDailyExpense,
     deleteDailyExpense,
     checkAndTriggerBudgetAlert,
 } from '../lib/dataService';
@@ -44,6 +45,7 @@ export function DailyExpensesScreen() {
     const [expenses, setExpenses] = useState<DailyExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [editingExpense, setEditingExpense] = useState<DailyExpense | null>(null);
 
     const month = getCurrentMonthKey();
 
@@ -118,12 +120,30 @@ export function DailyExpensesScreen() {
             Alert.alert('Error', error.message);
         }
     }
+    async function handleEdit(id: string, description: string, amount: number, category: string) {
+        if (!user) return;
+        try {
+            const updated = await updateDailyExpense(id, {
+                description,
+                amount,
+                category,
+            });
+            setExpenses((prev) => prev.map((e) => (e.id === id ? updated : e)));
+            setEditingExpense(null);
+
+            // Check budget alert
+            await checkAndTriggerBudgetAlert(user.id, user.email ?? '');
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+        }
+    }
 
     const handleActionPress = (item: DailyExpense) => {
         Alert.alert(
             item.description,
             'Selecciona una acción:',
             [
+                { text: 'Editar', onPress: () => setEditingExpense(item) },
                 { 
                     text: 'Eliminar', 
                     onPress: () => handleDelete(item.id),
@@ -228,6 +248,16 @@ export function DailyExpensesScreen() {
                 onClose={() => setShowModal(false)}
                 onAdd={handleAdd}
             />
+
+            {/* Edit Modal */}
+            {editingExpense && (
+                <EditDailyExpenseModal
+                    visible={!!editingExpense}
+                    expense={editingExpense}
+                    onClose={() => setEditingExpense(null)}
+                    onEdit={handleEdit}
+                />
+            )}
         </ResponsiveScreen>
     );
 }
@@ -251,6 +281,97 @@ function groupByDate(expenses: DailyExpense[]) {
 }
 
 /* ─── Add Modal ─── */
+
+function EditDailyExpenseModal({
+    visible,
+    expense,
+    onClose,
+    onEdit,
+}: {
+    visible: boolean;
+    expense: DailyExpense;
+    onClose: () => void;
+    onEdit: (id: string, description: string, amount: number, category: string) => void;
+}) {
+    const [description, setDescription] = useState(expense.description);
+    const [amount, setAmount] = useState(expense.amount.toString());
+    const [category, setCategory] = useState<DailyExpenseCategory>(expense.category as DailyExpenseCategory || 'otros');
+
+    function handleSubmit() {
+        if (!description.trim()) {
+            Alert.alert('Error', 'Ingresa una descripción.');
+            return;
+        }
+        const numAmount = parseInt(amount.replace(/\D/g, ''), 10);
+        if (!numAmount || numAmount <= 0) {
+            Alert.alert('Error', 'Ingresa un monto válido.');
+            return;
+        }
+        onEdit(expense.id, description.trim(), numAmount, category);
+    }
+
+    return (
+        <Modal visible={visible} animationType="slide" transparent>
+            <View style={modalStyles.backdrop}>
+                <View style={modalStyles.sheet}>
+                    <Text style={modalStyles.title}>Editar gasto diario</Text>
+
+                    <Input
+                        label="Descripción"
+                        placeholder="Ej: Almuerzo, Transporte..."
+                        value={description}
+                        onChangeText={setDescription}
+                    />
+
+                    <Input
+                        label="Monto (CLP)"
+                        placeholder="Ej: 5.000"
+                        value={amount}
+                        onChangeText={setAmount}
+                        keyboardType="numeric"
+                    />
+
+                    <Text style={modalStyles.label}>Categoría</Text>
+                    <View style={modalStyles.catRow}>
+                        {DAILY_EXPENSE_CATEGORIES.map((cat) => (
+                            <TouchableOpacity
+                                key={cat.value}
+                                style={[
+                                    modalStyles.catChip,
+                                    category === cat.value && modalStyles.catChipActive,
+                                ]}
+                                onPress={() => setCategory(cat.value)}
+                            >
+                                <Text
+                                    style={[
+                                        modalStyles.catChipText,
+                                        category === cat.value && modalStyles.catChipTextActive,
+                                    ]}
+                                >
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={modalStyles.actions}>
+                        <Button
+                            title="Cancelar"
+                            onPress={onClose}
+                            variant="ghost"
+                            style={{ flex: 1 }}
+                        />
+                        <Button
+                            title="Guardar"
+                            onPress={handleSubmit}
+                            style={{ flex: 1 }}
+                        />
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}
 
 function AddDailyExpenseModal({
     visible,

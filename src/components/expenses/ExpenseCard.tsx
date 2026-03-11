@@ -44,61 +44,63 @@ export function ExpenseCard({
 
     return (
         <Card style={styles.cardContainer}>
-            <TouchableOpacity 
-                style={styles.mainContent} 
-                onPress={onPress}
-                activeOpacity={0.7}
-            >
-                <View style={[styles.iconBadge, { backgroundColor: `${categoryColor}15` }]}>
-                    <IconComponent size={20} color={categoryColor} />
-                </View>
-
-                <View style={styles.detailsContainer}>
-                    <View style={styles.topRow}>
-                        <Text 
-                            style={[
-                                styles.title, 
-                                isPaid && styles.textMuted
-                            ]} 
-                            numberOfLines={1}
-                        >
-                            {title}
-                        </Text>
-                        <Text 
-                            style={[
-                                styles.amount,
-                                isPaid && styles.textMuted
-                            ]}
-                        >
-                            {formatCurrency(amount)}
-                        </Text>
+            <View style={styles.containerRow}>
+                <TouchableOpacity 
+                    style={styles.mainContent} 
+                    onPress={onPress}
+                    activeOpacity={0.7}
+                >
+                    <View style={[styles.iconBadge, { backgroundColor: `${categoryColor}15` }]}>
+                        <IconComponent size={20} color={categoryColor} />
                     </View>
 
-                    <View style={styles.bottomRow}>
-                        <View style={[styles.categoryChip, { backgroundColor: `${categoryColor}20` }]}>
-                            <View style={[styles.dot, { backgroundColor: categoryColor }]} />
-                            <Text style={[styles.categoryText, { color: categoryColor }]}>
-                                {categoryLabel}
+                    <View style={styles.detailsContainer}>
+                        <View style={styles.topRow}>
+                            <Text 
+                                style={[
+                                    styles.title, 
+                                    isPaid && styles.textMuted
+                                ]} 
+                                numberOfLines={1}
+                            >
+                                {title}
+                            </Text>
+                            <Text 
+                                style={[
+                                    styles.amount,
+                                    isPaid && styles.textMuted
+                                ]}
+                            >
+                                {formatCurrency(amount)}
                             </Text>
                         </View>
-                        {subtitle && (
-                            <Text style={styles.subtitle}>
-                                {subtitle}
-                            </Text>
-                        )}
+
+                        <View style={styles.bottomRow}>
+                            <View style={[styles.categoryChip, { backgroundColor: `${categoryColor}20` }]}>
+                                <View style={[styles.dot, { backgroundColor: categoryColor }]} />
+                                <Text style={[styles.categoryText, { color: categoryColor }]}>
+                                    {categoryLabel}
+                                </Text>
+                            </View>
+                            {subtitle && (
+                                <Text style={styles.subtitle}>
+                                    {subtitle}
+                                </Text>
+                            )}
+                        </View>
                     </View>
-                </View>
+                </TouchableOpacity>
 
                 {onActionPress && (
                     <TouchableOpacity 
                         style={styles.actionButton} 
                         onPress={onActionPress}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                     >
                         <LucideIcons.MoreVertical size={18} color={Colors.text.muted} />
                     </TouchableOpacity>
                 )}
-            </TouchableOpacity>
+            </View>
         </Card>
     );
 }
@@ -111,6 +113,10 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: Colors.neutral[700],
+    },
+    containerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     mainContent: {
         flexDirection: 'row',
