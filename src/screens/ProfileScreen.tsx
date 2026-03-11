@@ -16,7 +16,7 @@ import { User, Bell, Calendar, LogOut, Save, Trash2, RefreshCcw } from 'lucide-r
 import { useAuth } from '../contexts/AuthContext';
 import { getProfile, upsertProfile, clearUserCache } from '../lib/dataService';
 import { Colors, Spacing, Radius, Typography, Shadows } from '../theme/tokens';
-import { Button, Input, Card } from '../components/common';
+import { Button, Input, Card, ResponsiveScreen } from '../components/common';
 import { Profile } from '../types';
 
 export function ProfileScreen() {
@@ -95,7 +95,7 @@ export function ProfileScreen() {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ResponsiveScreen maxWidth={600} contentContainerStyle={styles.content}>
             <View style={styles.header}>
                 <View style={styles.avatarCircle}>
                     <User color={Colors.brand.primary} size={40} />
@@ -175,7 +175,7 @@ export function ProfileScreen() {
                 <LogOut color={Colors.status.danger} size={20} />
                 <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
-        </ScrollView>
+        </ResponsiveScreen>
     );
 }
 
@@ -185,8 +185,8 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background.main,
     },
     content: {
-        padding: Spacing.lg,
-        paddingTop: 60,
+        paddingTop: Spacing.xl,
+        paddingHorizontal: 0,
     },
     loadingContainer: {
         flex: 1,

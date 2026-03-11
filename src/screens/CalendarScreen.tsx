@@ -23,7 +23,7 @@ import {
     Circle,
     Calendar as CalendarIcon 
 } from 'lucide-react-native';
-import { Card } from '../components/common';
+import { Card, ResponsiveScreen } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import { getFixedExpenses, toggleFixedExpensePaid } from '../lib/dataService';
 import { getCurrentMonthKey, formatCurrency } from '../lib/dateHelpers';
@@ -124,10 +124,13 @@ export function CalendarScreen() {
     }
 
     return (
-        <View style={styles.screen}>
-            <View style={[styles.webContainer, isLargeScreen && styles.webContainerExpanded]}>
-                {/* Header */}
-                <View style={[styles.header, isLargeScreen && styles.headerDesktop]}>
+        <ResponsiveScreen
+            maxWidth={1100}
+            useScrollView={!isLargeScreen}
+            contentContainerStyle={styles.responsiveContent}
+        >
+            {/* Header */}
+            <View style={[styles.header, isLargeScreen && styles.headerDesktop]}>
                     <Text style={styles.title}>Calendario de Pagos</Text>
                     <View style={styles.monthSelector}>
                         <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.arrowButton}>
@@ -238,10 +241,8 @@ export function CalendarScreen() {
                             }
                             scrollEnabled={!isLargeScreen}
                         />
-                    </View>
-                </View>
             </View>
-        </View>
+        </ResponsiveScreen>
     );
 }
 
@@ -250,14 +251,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.background.main,
     },
-    webContainer: {
-        width: '100%',
-        maxWidth: 600,
-        alignSelf: 'center',
-        paddingBottom: Spacing.xl,
-    },
-    webContainerExpanded: {
-        maxWidth: 1100,
+    responsiveContent: {
+        paddingHorizontal: 0,
+        flex: 1,
     },
     centered: {
         flex: 1,
@@ -266,8 +262,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background.main,
     },
     header: {
-        paddingTop: Spacing.xxl + Spacing.lg,
-        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.xl,
         paddingBottom: Spacing.md,
     },
     headerDesktop: {

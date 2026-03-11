@@ -19,6 +19,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 import { Wallet, Mail, Lock, Chrome } from 'lucide-react-native';
 import { Button, Input } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
+import { ResponsiveScreen } from '../components/common/ResponsiveScreen';
 import { supabase } from '../lib/supabase';
 import { Colors, Spacing, Typography, Radius } from '../theme/tokens';
 
@@ -97,15 +98,14 @@ export function AuthScreen() {
     return (
         <LinearGradient
             colors={['#ffffff', '#f1f5f9']}
-            style={styles.gradient}
+            style={styles.flex}
         >
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            <ResponsiveScreen
+                maxWidth={450}
+                contentContainerStyle={styles.responsiveContent}
             >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
                     {/* Header */}
                     <View style={styles.header}>
@@ -170,24 +170,20 @@ export function AuthScreen() {
                             />
                         </View>
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+                </KeyboardAvoidingView>
+            </ResponsiveScreen>
         </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
-    gradient: {
-        flex: 1,
-    },
     flex: {
         flex: 1,
     },
-    scrollContent: {
+    responsiveContent: {
         flexGrow: 1,
         justifyContent: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.xxl,
+        paddingHorizontal: 0, // ResponsiveScreen already handles padding
     },
     header: {
         alignItems: 'center',

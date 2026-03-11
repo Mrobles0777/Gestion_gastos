@@ -13,6 +13,7 @@ import {
     RefreshControl,
     ActivityIndicator,
     Alert,
+    useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,7 +25,7 @@ import {
     LogOut,
     Settings,
 } from 'lucide-react-native';
-import { Card, ProgressBar, Button } from '../components/common';
+import { Card, ProgressBar, Button, ResponsiveScreen } from '../components/common';
 import { BudgetImpactCard } from '../components/dashboard/BudgetImpactCard';
 import { useAuth } from '../contexts/AuthContext';
 import { getDashboardData, getProfile, getFixedExpenses } from '../lib/dataService';
@@ -38,6 +39,8 @@ export function DashboardScreen() {
     const [pendingPayments, setPendingPayments] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const { width } = useWindowDimensions();
+    const isLarge = width > 850;
 
     const monthKey = getCurrentMonthKey();
 
@@ -100,88 +103,95 @@ export function DashboardScreen() {
     );
 
     return (
-        <View style={styles.screen}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        tintColor={Colors.brand.primary}
-                    />
-                }
-            >
-                {/* Header */}
-                <View style={styles.headerRow}>
-                    <View>
-                        <Text style={styles.greeting}>Dashboard</Text>
-                        <Text style={styles.monthLabel}>{monthLabel}</Text>
-                    </View>
-                    <Button
-                        title=""
-                        onPress={signOut}
-                        variant="ghost"
-                        icon={<LogOut color={Colors.text.secondary} size={22} />}
-                    />
-                </View>
-
-                {/* Salary Card */}
-                <LinearGradient
-                    colors={[...Colors.gradient.primary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.salaryCard}
-                >
-                    <View style={styles.salaryHeader}>
-                        <Wallet color={Colors.neutral.white} size={24} />
-                        <Text style={styles.salaryLabel}>Sueldo mensual</Text>
-                    </View>
-                    <Text style={styles.salaryAmount}>{formatCurrency(data.salary)}</Text>
-                </LinearGradient>
-
-                {/* Budget Impact Visualization */}
-                <BudgetImpactCard
-                    consumed={data.totalSpent}
-                    available={data.available}
-                    total={data.salary}
-                    percent={data.percentConsumed}
-                    threshold={data.alertThreshold}
+        <ResponsiveScreen
+            maxWidth={1100}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    tintColor={Colors.brand.primary}
                 />
-                
-                {pendingPayments > 0 && (
-                    <Card style={styles.pendingCard}>
-                        <View style={styles.pendingRow}>
-                            <Calendar color={Colors.status.danger} size={20} />
-                            <Text style={styles.pendingText}>
-                                Tienes {pendingPayments} pago{pendingPayments > 1 ? 's' : ''} pendiente{pendingPayments > 1 ? 's' : ''} este mes.
-                            </Text>
-                        </View>
-                    </Card>
-                )}
+            }
+            contentContainerStyle={styles.scrollContent}
+        >
+            {/* Header */}
+            <View style={styles.headerRow}>
+                <View>
+                    <Text style={styles.greeting}>Dashboard</Text>
+                    <Text style={styles.monthLabel}>{monthLabel}</Text>
+                </View>
+                <Button
+                    title=""
+                    onPress={signOut}
+                    variant="ghost"
+                    icon={<LogOut color={Colors.text.secondary} size={22} />}
+                />
+            </View>
 
-                {/* Stats Grid */}
-                <View style={styles.statsGrid}>
-                    <StatCard
-                        icon={<TrendingDown color={Colors.status.danger} size={22} />}
-                        label="Gastos fijos"
-                        value={formatCurrency(data.totalFixed)}
-                        color={Colors.status.danger}
-                    />
-                    <StatCard
-                        icon={<Calendar color={Colors.status.warning} size={22} />}
-                        label="Gastos diarios"
-                        value={formatCurrency(data.totalDaily)}
-                        color={Colors.status.warning}
-                    />
-                    <StatCard
-                        icon={<TrendingDown color={Colors.status.info} size={22} />}
-                        label="Total gastado"
-                        value={formatCurrency(data.totalSpent)}
-                        color={Colors.status.info}
+            <View style={[styles.mainGrid, isLarge && styles.mainGridLarge]}>
+                {/* Left side on desktop, top on mobile */}
+                <View style={[styles.primaryColumn, isLarge && styles.primaryColumnLarge]}>
+                    {/* Salary Card */}
+                    <LinearGradient
+                        colors={[...Colors.gradient.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.salaryCard}
+                    >
+                        <View style={styles.salaryHeader}>
+                            <Wallet color={Colors.neutral.white} size={24} />
+                            <Text style={styles.salaryLabel}>Sueldo mensual</Text>
+                        </View>
+                        <Text style={styles.salaryAmount}>{formatCurrency(data.salary)}</Text>
+                    </LinearGradient>
+
+                    {/* Budget Impact Visualization */}
+                    <BudgetImpactCard
+                        consumed={data.totalSpent}
+                        available={data.available}
+                        total={data.salary}
+                        percent={data.percentConsumed}
+                        threshold={data.alertThreshold}
                     />
                 </View>
-            </ScrollView>
-        </View>
+
+                {/* Right side/Bottom */}
+                <View style={styles.secondaryColumn}>
+                    {pendingPayments > 0 && (
+                        <Card style={styles.pendingCard}>
+                            <View style={styles.pendingRow}>
+                                <Calendar color={Colors.status.danger} size={20} />
+                                <Text style={styles.pendingText}>
+                                    Tienes {pendingPayments} pago{pendingPayments > 1 ? 's' : ''} pendiente{pendingPayments > 1 ? 's' : ''}.
+                                </Text>
+                            </View>
+                        </Card>
+                    )}
+
+                    {/* Stats Grid */}
+                    <View style={styles.statsGrid}>
+                        <StatCard
+                            icon={<TrendingDown color={Colors.status.danger} size={22} />}
+                            label="Gastos fijos"
+                            value={formatCurrency(data.totalFixed)}
+                            color={Colors.status.danger}
+                        />
+                        <StatCard
+                            icon={<Calendar color={Colors.status.warning} size={22} />}
+                            label="Gastos diarios"
+                            value={formatCurrency(data.totalDaily)}
+                            color={Colors.status.warning}
+                        />
+                        <StatCard
+                            icon={<TrendingDown color={Colors.status.info} size={22} />}
+                            label="Total gastado"
+                            value={formatCurrency(data.totalSpent)}
+                            color={Colors.status.info}
+                        />
+                    </View>
+                </View>
+            </View>
+        </ResponsiveScreen>
     );
 }
 
@@ -217,8 +227,25 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background.main,
     },
     scrollContent: {
-        padding: Spacing.lg,
-        paddingTop: Spacing.xxl + Spacing.lg,
+        paddingTop: Spacing.xl,
+        paddingHorizontal: 0, // ResponsiveScreen handles padding
+    },
+    mainGrid: {
+        flexDirection: 'column',
+    },
+    mainGridLarge: {
+        flexDirection: 'row',
+        gap: Spacing.xl,
+        alignItems: 'flex-start',
+    },
+    primaryColumn: {
+        flex: 1,
+    },
+    primaryColumnLarge: {
+        flex: 1.5,
+    },
+    secondaryColumn: {
+        flex: 1,
     },
     centered: {
         flex: 1,

@@ -21,7 +21,7 @@ import {
     Trash2,
     ShoppingCart,
 } from 'lucide-react-native';
-import { Card, Button, Input } from '../components/common';
+import { Card, Button, Input, ResponsiveScreen } from '../components/common';
 import { useAuth } from '../contexts/AuthContext';
 import {
     getDailyExpenses,
@@ -127,7 +127,11 @@ export function DailyExpensesScreen() {
     }
 
     return (
-        <View style={styles.screen}>
+        <ResponsiveScreen
+            useScrollView={false}
+            maxWidth={800}
+            contentContainerStyle={styles.responsiveContent}
+        >
             {/* Header */}
             <View style={styles.header}>
                 <View>
@@ -201,7 +205,7 @@ export function DailyExpensesScreen() {
                 onClose={() => setShowModal(false)}
                 onAdd={handleAdd}
             />
-        </View>
+        </ResponsiveScreen>
     );
 }
 
@@ -315,9 +319,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.xxl + Spacing.lg,
+        paddingTop: Spacing.xl,
         paddingBottom: Spacing.md,
+    },
+    responsiveContent: {
+        paddingHorizontal: 0,
+        flex: 1,
     },
     title: {
         fontFamily: Typography.family.bold,
