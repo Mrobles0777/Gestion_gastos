@@ -26,16 +26,17 @@ interface PaymentReminderModalProps {
     visible: boolean;
     onClose: () => void;
     expenses: FixedExpense[];
+    selectedDay?: number;
 }
 
-export function PaymentReminderModal({ visible, onClose, expenses }: PaymentReminderModalProps) {
+export function PaymentReminderModal({ visible, onClose, expenses, selectedDay }: PaymentReminderModalProps) {
     const [isSending, setIsSending] = React.useState(false);
     const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
 
     const handleSendSimulation = async () => {
         setIsSending(true);
         try {
-            await triggerPaymentReminder(true);
+            await triggerPaymentReminder(true, selectedDay);
             Alert.alert(
                 'Simulación Exitosa',
                 'Se ha solicitado el envío del recordatorio de prueba.'

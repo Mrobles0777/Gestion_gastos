@@ -19,11 +19,13 @@ serve(async (req) => {
   try {
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    // Leer payload opcional (para simulación manual)
+    // Leer payload opcional (para simulación manual o cron avanzado)
     let isSimulation = false;
+    let simulatedDay: number | null = null;
     try {
       const payload = await req.json();
       isSimulation = payload?.is_simulation === true;
+      simulatedDay = payload?.simulated_day ?? null;
     } catch {
       // No hay payload, es una llamada normal (cron)
     }
@@ -69,11 +71,14 @@ serve(async (req) => {
       .eq('is_paid', false)
       .eq('month', monthKey);
 
-    // Si no es simulación, filtrar estrictamente por el día de hoy
+    // Si no es simulación, filtrar estrictamente por el día de hoy real
     if (!isSimulation) {
       query = query.eq('due_day', currentDay);
+    } else if (simulatedDay) {
+      // Si es simulación con día específico elegido por el usuario
+      query = query.eq('due_day', simulatedDay);
     } else {
-      // En simulación, traer máximo 3 para no saturar, de cualquier día
+      // En simulación genérica, traer máximo 3 de cualquier día
       query = query.limit(3);
     }
 

@@ -161,6 +161,7 @@ export function CalendarScreen() {
                         ? expenses.filter(e => e.due_day === new Date().getDate() && !e.is_paid)
                         : expenses.slice(0, 2) // Simulation fallback
                     }
+                    selectedDay={selectedDay || new Date().getDate()}
                 />
 
                 <View style={[isLargeScreen && styles.mainLayout, isLargeScreen && styles.mainLayoutDesktop]}>
