@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     },
     monthLabel: {
         fontFamily: Typography.family.bold,
-        fontSize: Typography.size.body,
+        fontSize: Typography.size.small, // Reduced from body
         color: Colors.text.primary,
         textTransform: 'capitalize',
         textAlign: 'center',
@@ -323,6 +323,7 @@ const styles = StyleSheet.create({
     },
     calendarColumn: {
         flex: 1,
+        maxWidth: 320, // Constrain width on desktop
     },
     listColumn: {
         flex: 1,
@@ -333,9 +334,9 @@ const styles = StyleSheet.create({
     },
     calendarContainer: {
         backgroundColor: Colors.background.card,
-        marginHorizontal: Spacing.lg,
-        marginBottom: Spacing.lg,
-        padding: Spacing.md,
+        marginHorizontal: Spacing.md, // Reduced from lg
+        marginBottom: Spacing.md, // Reduced from lg
+        padding: Spacing.sm, // Reduced from md
         borderRadius: Radius.lg,
         ...Shadows.card,
     },
@@ -350,10 +351,10 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'center',
         fontFamily: Typography.family.bold,
-        fontSize: 10,
+        fontSize: 8, // Reduced from 10
         color: Colors.text.muted,
         textTransform: 'uppercase',
-        letterSpacing: 1,
+        letterSpacing: 0.5,
     },
     grid: {
         flexDirection: 'row',
@@ -361,11 +362,11 @@ const styles = StyleSheet.create({
     },
     dayCell: {
         width: '14.28%',
-        height: 48, // Fixed height to avoid stretching
+        height: 34, // Reduced by ~30% from 48
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: Radius.sm,
-        marginVertical: 2,
+        marginVertical: 1, // Reduced from 2
     },
     selectedDay: {
         backgroundColor: Colors.brand.primary,
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     },
     dayNumber: {
         fontFamily: Typography.family.medium,
-        fontSize: Typography.size.body,
+        fontSize: Typography.size.small, // Reduced from body
         color: Colors.text.primary,
     },
     selectedDayText: {
@@ -384,12 +385,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 2,
         position: 'absolute',
-        bottom: 6,
+        bottom: 3, // Reduced from 6
     },
     dot: {
-        width: 4,
-        height: 4,
-        borderRadius: 2,
+        width: 3, // Reduced from 4
+        height: 3, // Reduced from 4
+        borderRadius: 1.5,
     },
     dotUnpaid: {
         backgroundColor: Colors.status.danger,
@@ -420,9 +421,9 @@ const styles = StyleSheet.create({
     desktopGridContainer: {
         flexDirection: 'column',
         flexWrap: 'wrap',
-        height: 380, // Forced height to ensure exactly 6 items vertically
+        height: 320, // Reduced height to match shrunken calendar
         paddingRight: Spacing.xl,
-        gap: Spacing.sm,
+        gap: Spacing.xs, // More tight
     },
     listContent: {
         paddingHorizontal: Spacing.lg,
